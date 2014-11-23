@@ -19,4 +19,4 @@ The MIT License (MIT)
 
 Author
 ------
-tonary <jetBeaver@gmail.com>
+tonary <<jetBeaver@gmail.com>>
