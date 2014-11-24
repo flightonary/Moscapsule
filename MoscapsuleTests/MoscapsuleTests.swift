@@ -46,7 +46,15 @@ class MoscapsuleTests: XCTestCase {
     }
 
     func testCreateInstance() {
+        let mc0 = MQTTClient()
         let mc1 = MQTTClient(clientId: "hoge")
-        let mc2 = MQTTClient(clientId: "hoge", cleanSession: false)
+        let mc2 = MQTTClient(clientId: "huge", cleanSession: false)
+    }
+    
+    func testConnectToMQTTServer() {
+        let mqttClient = MQTTClient(clientId: "hoge")
+        mqttClient.connect("test.mosquitto.org", port: 1883, keepAlive: 60)
+        sleep(2)
+        mqttClient.disconnect()
     }
 }
