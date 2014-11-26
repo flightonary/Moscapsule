@@ -33,27 +33,12 @@ struct mosquitto;
 struct mosquitto_message;
 
 @class MQTTMessage;
+@class __MosquittoContext;
 
-@class MosquittoContext;
-@interface MosquittoContext : NSObject
-    @property (nonatomic) struct mosquitto *mosquittoHandler;
-    @property (nonatomic) bool isConnected;
-    @property (nonatomic, copy) void (^onConnectCallback)(int returnCode);
-    @property (nonatomic, copy) void (^onDisconnectCallback)(int reasonCode);
-    @property (nonatomic, copy) void (^onPublishCallback)(int messageId);
-    @property (nonatomic, copy) void (^onMessageCallback)(int reasonCode, MQTTMessage *mqttMessage);
-    @property (nonatomic, copy) void (^onSubscribeCallback)(int messageId, NSArray* grantedQos);
-    @property (nonatomic, copy) void (^onUnsubscribeCallback)(int messageId);
-@end
-
-//, void (^)(int returnCode), void (^)(int reasonCode)
-MosquittoContext *mosquitto_context_new(const char *client_id, bool clean_session);
-void mosquitto_context_destroy(MosquittoContext *mosquitto_context);
+void mosquitto_context_initialize(const char *client_id, bool clean_session, __MosquittoContext *mosquittoContext);
+void mosquitto_context_destroy(__MosquittoContext *mosquitto_context);
 
 static void setMosquittoCallbackBridge(struct mosquitto *);
-
-//void setOnConnectCallback(void (^block)(int returnCode));
-//void setOnDisconnectCallback(void (^block)(int reasonCode));
 
 static void on_connect(struct mosquitto *, void *, int);
 static void on_disconnect(struct mosquitto *, void *, int);

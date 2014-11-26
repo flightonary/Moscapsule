@@ -31,36 +31,16 @@
 #import "mosquitto.h"
 #import "Moscapsule/Moscapsule-Swift.h"
 
-@implementation MosquittoContext : NSObject
-@end
-
-// , void (^onConnect)(int returnCode), void (^onDisconnect)(int reasonCode)
-MosquittoContext *mosquitto_context_new(const char *clientId, bool cleanSession)
+void mosquitto_context_initialize(const char *clientId, bool cleanSession, __MosquittoContext *mosquittoContext)
 {
-    MosquittoContext *mosquittoContext = [[MosquittoContext alloc] init];
-    if (!mosquittoContext) {
-        return nil;
-    }
-
     struct mosquitto *mosquittoHandler = mosquitto_new(clientId, cleanSession, (__bridge void*)mosquittoContext);
-    if (!mosquittoHandler) {
-        return nil;
-    }
 
     mosquittoContext.mosquittoHandler = mosquittoHandler;
     mosquittoContext.isConnected = false;
-    mosquittoContext.onConnectCallback = nil;
-    mosquittoContext.onDisconnectCallback = nil;
-    mosquittoContext.onPublishCallback = nil;
-    mosquittoContext.onMessageCallback = nil;
-    mosquittoContext.onSubscribeCallback = nil;
-    mosquittoContext.onUnsubscribeCallback = nil;
     setMosquittoCallbackBridge(mosquittoContext.mosquittoHandler);
-
-    return mosquittoContext;
 }
 
-void mosquitto_context_destroy(MosquittoContext *mosquittoContext)
+void mosquitto_context_destroy(__MosquittoContext *mosquittoContext)
 {
     mosquitto_destroy(mosquittoContext.mosquittoHandler);
 }
@@ -80,7 +60,7 @@ static void setMosquittoCallbackBridge(struct mosquitto *mosquittoHandler)
 
 static void on_connect(struct mosquitto *mosquittoHandler, void *obj, int returnCode)
 {
-    MosquittoContext *mosquittoContext = (__bridge MosquittoContext*)obj;
+    __MosquittoContext *mosquittoContext = (__bridge __MosquittoContext*)obj;
     if (mosquittoContext.onConnectCallback) {
         mosquittoContext.onConnectCallback(returnCode);
     }
@@ -88,7 +68,7 @@ static void on_connect(struct mosquitto *mosquittoHandler, void *obj, int return
 
 static void on_disconnect(struct mosquitto *mosquittoHandler, void *obj, int reasonCode)
 {
-    MosquittoContext* mosquittoContext = (__bridge MosquittoContext*)obj;
+    __MosquittoContext* mosquittoContext = (__bridge __MosquittoContext*)obj;
     if (mosquittoContext.onDisconnectCallback) {
         mosquittoContext.onDisconnectCallback(reasonCode);
     }
