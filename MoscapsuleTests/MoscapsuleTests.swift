@@ -36,12 +36,10 @@ class MoscapsuleTests: XCTestCase {
     override func setUp() {
         super.setUp()
         // Put setup code here. This method is called before the invocation of each test method in the class.
-        Moscapsule.initialize()
     }
     
     override func tearDown() {
         // Put teardown code here. This method is called after the invocation of each test method in the class.
-        Moscapsule.cleanup()
         super.tearDown()
     }
 
@@ -56,5 +54,7 @@ class MoscapsuleTests: XCTestCase {
         mqttClient.connect("test.mosquitto.org", port: 1883, keepAlive: 60)
         sleep(2)
         mqttClient.disconnect()
+        sleep(2)
+        NSLog("reach to end of testConnectToMQTTServer")
     }
 }

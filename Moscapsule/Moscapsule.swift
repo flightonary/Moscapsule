@@ -70,11 +70,18 @@ public struct MQTTAuthOpts {
     let password: String
 }
 
+@objc(MQTTMessage)
+public class MQTTMessage {
+    //    int mid;
+    //    char *topic;
+    //    void *payload;
+    //    int payloadlen;
+    //    int qos;
+    //    bool retain;
+    var messageId: Int32 = 0
+}
+
 public class MQTTClient {
-    
-    private struct MQTTCallBacks {
-        /// TODO: define callbacks
-    }
     
     public let clientId: String
     public let cleanSession: Bool
@@ -82,8 +89,8 @@ public class MQTTClient {
     private var mqttWillOpts: MQTTWillOpts?
     private var mqttAuthOpts: MQTTAuthOpts?
 
-    private var mqttCallBacks: MQTTCallBacks
-    private var mosquittoHandler: COpaquePointer
+    private var mosquittoContext: MosquittoContext
+    //private var mosquittoHandler: COpaquePointer
     
     private let operationQueue: NSOperationQueue
 
@@ -99,14 +106,16 @@ public class MQTTClient {
         self.clientId = clientId
         self.cleanSession = cleanSession
         self.mqttConnOpts = MQTTConnOpts()
-        self.mqttCallBacks = MQTTCallBacks()
         self.operationQueue = NSOperationQueue()
-        self.mosquittoHandler = mosquitto_new(clientId.cCharArray, cleanSession, &self.mqttCallBacks)
-        assert(self.mosquittoHandler != COpaquePointer.null())
+
+        // TODO: Should be mosquittoHandler managed by Unmanaged<COpaquePointer>?
+        // TODO: Is reference counter of mqttContext incremented?
+        self.mosquittoContext = mosquitto_context_new(clientId.cCharArray, cleanSession)
     }
-    
+
     deinit {
-        mosquitto_destroy(mosquittoHandler)
+        NSLog("will mosquitto_destroy")
+        mosquitto_context_destroy(mosquittoContext)
     }
 
     public func setWillOpts(mqttWillOpts: MQTTWillOpts) -> MQTTClient {
@@ -123,58 +132,57 @@ public class MQTTClient {
         self.mqttConnOpts = mqttConnOpts
         return self
     }
+
+    public func setTlsInsecure(beInsecure: Bool) -> MQTTClient {
+        mosquitto_tls_insecure_set(mosquittoContext.mosquittoHandler, beInsecure)
+        return self
+    }
     
     public func connect(host: String, port: Int32, keepAlive: Int32) {
+        // set MQTT Connection Options
+        mosquitto_reconnect_delay_set(mosquittoContext.mosquittoHandler,
+            self.mqttConnOpts.reconnect_delay_s,
+            self.mqttConnOpts.reconnect_delay_max_s,
+            self.mqttConnOpts.reconnect_exponential_backoff)
+        
+        // set MQTT Will Options
+        if let mqttWillOpts = mqttWillOpts {
+            mosquitto_will_set(mosquittoContext.mosquittoHandler, mqttWillOpts.topic.cCharArray,
+                Int32(mqttWillOpts.payload.length), mqttWillOpts.payload.bytes,
+                mqttWillOpts.qos, mqttWillOpts.retain)
+        }
+        
+        // set MQTT Authentication Options
+        if let mqttAuthOpts = mqttAuthOpts {
+            mosquitto_username_pw_set(mosquittoContext.mosquittoHandler, mqttAuthOpts.username.cCharArray, mqttAuthOpts.password.cCharArray)
+        }
+        
+        mosquittoContext.onConnectCallback = { returnCode in
+            NSLog("Return Code is \(returnCode) (this callback is defined in swift.)")
+        }
+
+        mosquittoContext.onDisconnectCallback = { reasonCode in
+            NSLog("Reason Code is \(reasonCode) (this callback is defined in swift.)")
+        }
+
+        // against circular reference
+        let mosquittoHandler = self.mosquittoContext.mosquittoHandler
+        let timeout = self.mqttConnOpts.timeout_ms
         operationQueue.addOperationWithBlock {
-            // set MQTT Connection Options
-            mosquitto_reconnect_delay_set(self.mosquittoHandler,
-                self.mqttConnOpts.reconnect_delay_s,
-                self.mqttConnOpts.reconnect_delay_max_s,
-                self.mqttConnOpts.reconnect_exponential_backoff)
-
-            // set MQTT Will Options
-            if let mqttWillOpts = self.mqttWillOpts {
-                mosquitto_will_set(self.mosquittoHandler, mqttWillOpts.topic.cCharArray,
-                    Int32(mqttWillOpts.payload.length), mqttWillOpts.payload.bytes,
-                    mqttWillOpts.qos, mqttWillOpts.retain)
-            }
-
-            // set MQTT Authentication Options
-            if let mqttAuthOpts = self.mqttAuthOpts {
-                mosquitto_username_pw_set(self.mosquittoHandler, mqttAuthOpts.username.cCharArray, mqttAuthOpts.password.cCharArray)
-            }
-            
-            //setCallBack()
-            
-            mosquitto_connect(self.mosquittoHandler, host.cCharArray, port, keepAlive)
-            mosquitto_loop_forever(self.mosquittoHandler, self.mqttConnOpts.timeout_ms, 1)
+        //dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
+            mosquitto_connect(mosquittoHandler, host.cCharArray, port, keepAlive)
+            mosquitto_loop_forever(mosquittoHandler, timeout, 1)
         }
     }
-
+    
     public func disconnect() {
-        operationQueue.addOperationWithBlock {
-            mosquitto_disconnect(self.mosquittoHandler)
+        operationQueue.addOperationWithBlock { [unowned self] in
+        //dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
+            mosquitto_disconnect(self.mosquittoContext.mosquittoHandler)
+            NSLog("done disconnect")
             return
         }
     }
-    
-    private func setCallBack() {
-        // This code can compile but does not work because CFunctionPointer<T> can be used to safely pass a C function pointer,
-        // received from one C or Objective-C API, to another C or Objective-C API
-        // No way to converting swift function or clojure to a C function pointer currently.
-        let callbackPointer = UnsafeMutablePointer<ConnectCallBack>.alloc(1)
-        callbackPointer.initialize(on_connect)
-        let functionPointer = CFunctionPointer<ConnectCallBack>(COpaquePointer(callbackPointer))
-        mosquitto_connect_callback_set(self.mosquittoHandler, functionPointer)
-        callbackPointer.destroy()
-        callbackPointer.dealloc(1)
-    }
-    
-    private let on_connect: ConnectCallBack = { mos, obj, returnCode in
-        NSLog("connection return code is \(returnCode)")
-    }
-
-    typealias ConnectCallBack = (COpaquePointer, UnsafeMutablePointer<Void>, Int32) -> Void
 }
 
 private extension String {
