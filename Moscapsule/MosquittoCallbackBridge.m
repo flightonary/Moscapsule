@@ -29,6 +29,7 @@
 #import <Foundation/Foundation.h>
 #import "MosquittoCallbackBridge.h"
 #import "mosquitto.h"
+#import "Moscapsule/Moscapsule-Swift.h"
 
 @implementation MosquittoContext : NSObject
 @end

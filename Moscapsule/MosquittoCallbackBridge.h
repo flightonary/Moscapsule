@@ -29,10 +29,10 @@
 #ifndef Moscapsule_MosquittoCallbackBridge_h
 #define Moscapsule_MosquittoCallbackBridge_h
 
-#import "Moscapsule/Moscapsule-Swift.h"
-
 struct mosquitto;
 struct mosquitto_message;
+
+@class MQTTMessage;
 
 @class MosquittoContext;
 @interface MosquittoContext : NSObject
