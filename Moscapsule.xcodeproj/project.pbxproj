@@ -42,6 +42,8 @@
 		09CF6B6C1A21F7E600A97383 /* will_mosq.h in Headers */ = {isa = PBXBuildFile; fileRef = 09CF6B4E1A21F7E600A97383 /* will_mosq.h */; };
 		09CF6B6E1A21F82600A97383 /* config.h in Headers */ = {isa = PBXBuildFile; fileRef = 09CF6B6D1A21F82600A97383 /* config.h */; };
 		09CF6B701A21F88000A97383 /* Moscapsule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09CF6B6F1A21F88000A97383 /* Moscapsule.swift */; };
+		C7360CC31A2435A8001F490F /* MosquittoCallbackBridge.m in Sources */ = {isa = PBXBuildFile; fileRef = C7360CC21A2435A8001F490F /* MosquittoCallbackBridge.m */; };
+		C7360CC51A243AB9001F490F /* MosquittoCallbackBridge.h in Headers */ = {isa = PBXBuildFile; fileRef = C7360CC41A243949001F490F /* MosquittoCallbackBridge.h */; settings = {ATTRIBUTES = (Public, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -93,6 +95,8 @@
 		09CF6B4E1A21F7E600A97383 /* will_mosq.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = will_mosq.h; path = mosquitto/lib/will_mosq.h; sourceTree = "<group>"; };
 		09CF6B6D1A21F82600A97383 /* config.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = config.h; path = Moscapsule/config.h; sourceTree = "<group>"; };
 		09CF6B6F1A21F88000A97383 /* Moscapsule.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Moscapsule.swift; sourceTree = "<group>"; };
+		C7360CC21A2435A8001F490F /* MosquittoCallbackBridge.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MosquittoCallbackBridge.m; sourceTree = "<group>"; };
+		C7360CC41A243949001F490F /* MosquittoCallbackBridge.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MosquittoCallbackBridge.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -139,6 +143,8 @@
 				09CF6B6F1A21F88000A97383 /* Moscapsule.swift */,
 				09CF6B181A21F78700A97383 /* Moscapsule.h */,
 				09CF6B161A21F78700A97383 /* Supporting Files */,
+				C7360CC21A2435A8001F490F /* MosquittoCallbackBridge.m */,
+				C7360CC41A243949001F490F /* MosquittoCallbackBridge.h */,
 			);
 			path = Moscapsule;
 			sourceTree = "<group>";
@@ -222,8 +228,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				09CF6B191A21F78700A97383 /* Moscapsule.h in Headers */,
-				09CF6B591A21F7E600A97383 /* mqtt3_protocol.h in Headers */,
 				09CF6B581A21F7E600A97383 /* mosquitto.h in Headers */,
+				09CF6B591A21F7E600A97383 /* mqtt3_protocol.h in Headers */,
+				C7360CC51A243AB9001F490F /* MosquittoCallbackBridge.h in Headers */,
 				09CF6B4F1A21F7E600A97383 /* dummypthread.h in Headers */,
 				09CF6B621A21F7E600A97383 /* send_mosq.h in Headers */,
 				09CF6B681A21F7E600A97383 /* tls_mosq.h in Headers */,
@@ -345,6 +352,7 @@
 				09CF6B541A21F7E600A97383 /* messages_mosq.c in Sources */,
 				09CF6B631A21F7E600A97383 /* srv_mosq.c in Sources */,
 				09CF6B571A21F7E600A97383 /* mosquitto.c in Sources */,
+				C7360CC31A2435A8001F490F /* MosquittoCallbackBridge.m in Sources */,
 				09CF6B671A21F7E600A97383 /* tls_mosq.c in Sources */,
 				09CF6B601A21F7E600A97383 /* send_client_mosq.c in Sources */,
 				09CF6B521A21F7E600A97383 /* memory_mosq.c in Sources */,
