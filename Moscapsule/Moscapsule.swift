@@ -36,29 +36,25 @@ public func cleanup() {
     mosquitto_lib_cleanup()
 }
 
-public struct MQTTReconnOpts {
+public class MQTTReconnOpts {
     public let reconnect_delay_s: UInt32
     public let reconnect_delay_max_s: UInt32
     public let reconnect_exponential_backoff: Bool
-    public let loop_timeout_ms: Int32?
     
     public init() {
         self.reconnect_delay_s = 5 //5sec
         self.reconnect_delay_max_s = 60 * 30 //30min
         self.reconnect_exponential_backoff = true
-        self.loop_timeout_ms = Optional.None
     }
     
-    public init(reconnect_delay_s: UInt32, reconnect_delay_max_s: UInt32,
-                reconnect_exponential_backoff: Bool, loop_timeout_ms: Int32? = Optional.None) {
+    public init(reconnect_delay_s: UInt32, reconnect_delay_max_s: UInt32, reconnect_exponential_backoff: Bool) {
         self.reconnect_delay_s = reconnect_delay_s
         self.reconnect_delay_max_s = reconnect_delay_max_s
         self.reconnect_exponential_backoff = reconnect_exponential_backoff
-        self.loop_timeout_ms = loop_timeout_ms
     }
 }
 
-public struct MQTTWillOpts {
+public class MQTTWillOpts {
     public let topic: String
     public let payload: NSData
     public let qos: Int32
@@ -71,22 +67,23 @@ public struct MQTTWillOpts {
         self.retain = retain
     }
 
-    public init(topic: String, payload: String, qos: Int32, retain: Bool) {
+    public convenience init(topic: String, payload: String, qos: Int32, retain: Bool) {
         let rawPayload = payload.dataUsingEncoding(NSUTF8StringEncoding)!
         self.init(topic: topic, payload: rawPayload, qos: qos, retain: retain)
     }
 }
 
-public struct MQTTAuthOpts {
+public class MQTTAuthOpts {
     public let username: String
     public let password: String
+
     public init(username: String, password: String) {
         self.username = username
         self.password = password
     }
 }
 
-public struct MQTTConfig {
+public class MQTTConfig: __MQTTCallback {
     public let clientId: String
     public let host: String
     public let port: Int32
@@ -95,13 +92,6 @@ public struct MQTTConfig {
     public var mqttReconnOpts: MQTTReconnOpts
     public var mqttWillOpts: MQTTWillOpts?
     public var mqttAuthOpts: MQTTAuthOpts?
-    
-    public var onConnectCallback: ((returnCode: Int) -> Void)!
-    public var onDisconnectCallback: ((reasonCode: Int) -> Void)!
-    public var onPublishCallback: ((messageId: Int) -> Void)!
-    public var onMessageCallback: ((mqttMessage: MQTTMessage) -> Void)!
-    public var onSubscribeCallback: ((messageId: Int, grantedQos: Array<Int>) -> Void)!
-    public var onUnsubscribeCallback: ((messageId: Int) -> Void)!
     
     public init(clientId: String, host: String, port: Int32, keepAlive: Int32) {
         self.clientId = clientId
@@ -113,14 +103,26 @@ public struct MQTTConfig {
     }
 }
 
+@objc(__MQTTCallback)
+public class __MQTTCallback {
+    public var onConnectCallback: ((returnCode: Int) -> Void)!
+    public var onDisconnectCallback: ((reasonCode: Int) -> Void)!
+    public var onPublishCallback: ((messageId: Int) -> Void)!
+    public var onMessageCallback: ((mqttMessage: MQTTMessage) -> Void)!
+    public var onSubscribeCallback: ((messageId: Int, grantedQos: Array<Int>) -> Void)!
+    public var onUnsubscribeCallback: ((messageId: Int) -> Void)!
+    internal init(){}
+}
+
+@objc(__MosquittoContext)
+public class __MosquittoContext: __MQTTCallback {
+    public var mosquittoHandler: COpaquePointer = COpaquePointer.null()
+    public var isConnected: Bool = false
+    internal override init(){}
+}
+
 @objc(MQTTMessage)
 public class MQTTMessage {
-    //    int mid;
-    //    char *topic;
-    //    void *payload;
-    //    int payloadlen;
-    //    int qos;
-    //    bool retain;
     public let messageId: Int = 0
     public let topic: String = ""
     public let payload: NSData = NSData()
@@ -128,33 +130,19 @@ public class MQTTMessage {
     public let retain: Bool = false
 }
 
-@objc(__MosquittoContext)
-public class __MosquittoContext {
-    public var mosquittoHandler: COpaquePointer = COpaquePointer.null()
-    public var isConnected: Bool = false
-    public var onConnectCallback: ((returnCode: Int) -> Void)!
-    public var onDisconnectCallback: ((reasonCode: Int) -> Void)!
-    public var onPublishCallback: ((messageId: Int) -> Void)!
-    public var onMessageCallback: ((mqttMessage: MQTTMessage) -> Void)!
-    public var onSubscribeCallback: ((messageId: Int, grantedQos: Array<Int>) -> Void)!
-    public var onUnsubscribeCallback: ((messageId: Int) -> Void)!
-}
-
 public class MQTT {
     public class func invokeMqttConnection(mqttConfig: MQTTConfig) -> MQTTClient {
         let mosquittoContext = __MosquittoContext()
+        mosquittoContext.onConnectCallback = mqttConfig.onConnectCallback
+        mosquittoContext.onDisconnectCallback = mqttConfig.onDisconnectCallback
+        mosquittoContext.onPublishCallback = mqttConfig.onPublishCallback
+        mosquittoContext.onMessageCallback = mqttConfig.onMessageCallback
+        mosquittoContext.onSubscribeCallback = mqttConfig.onSubscribeCallback
+        mosquittoContext.onUnsubscribeCallback = mqttConfig.onUnsubscribeCallback
 
-        // Test Code
-        mosquittoContext.onConnectCallback = { returnCode in
-            NSLog("Return Code is \(returnCode) (this callback is defined in swift.)")
-        }
-        mosquittoContext.onDisconnectCallback = { reasonCode in
-            NSLog("Reason Code is \(reasonCode) (this callback is defined in swift.)")
-        }
-        // Test Code end
+        // setup mosquittoHandler
+        mosquitto_context_setup(mqttConfig.clientId.cCharArray, mqttConfig.cleanSession, mosquittoContext)
 
-        mosquitto_context_initialize(mqttConfig.clientId.cCharArray, mqttConfig.cleanSession, mosquittoContext)
-        
         // set MQTT Reconnection Options
         mosquitto_reconnect_delay_set(mosquittoContext.mosquittoHandler,
             mqttConfig.mqttReconnOpts.reconnect_delay_s,
@@ -173,38 +161,35 @@ public class MQTT {
             mosquitto_username_pw_set(mosquittoContext.mosquittoHandler, mqttAuthOpts.username.cCharArray, mqttAuthOpts.password.cCharArray)
         }
         
-        // create new MQTT Client !!!!!
-        let mqttClient = MQTTClient(mqttConfig: mqttConfig, mosquittoContext: mosquittoContext)
-
         let mosquittoHandler = mosquittoContext.mosquittoHandler
-        let timeout = mqttConfig.mqttReconnOpts.loop_timeout_ms ?? mqttConfig.keepAlive*1000
         let host = mqttConfig.host
         let port = mqttConfig.port
         let keepAlive = mqttConfig.keepAlive
-        mqttClient.operationQueue.addOperationWithBlock {
+        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
             mosquitto_connect(mosquittoHandler, host.cCharArray, port, keepAlive)
-            mosquitto_loop_forever(mosquittoHandler, timeout, 1)
+            mosquitto_loop_start(mosquittoHandler)
         }
         
-        return mqttClient
+        return MQTTClient(mosquittoContext: mosquittoContext)
     }
 }
 
 public class MQTTClient {
-    public let mqttConfig: MQTTConfig
     private let mosquittoContext: __MosquittoContext
-    internal let operationQueue: NSOperationQueue
-    private var hasFinished: Bool
+    private let operationQueue: NSOperationQueue
+    private var isFinished: Bool
+    public var isConnected: Bool {
+        return mosquittoContext.isConnected
+    }
 
-    internal init(mqttConfig: MQTTConfig, mosquittoContext: __MosquittoContext) {
-        self.mqttConfig = mqttConfig
+    internal init(mosquittoContext: __MosquittoContext) {
         self.mosquittoContext = mosquittoContext
         self.operationQueue = NSOperationQueue()
-        self.hasFinished = false
+        self.isFinished = false
     }
     
     deinit {
-        if(!hasFinished) {
+        if(!isFinished) {
             disconnect()
         }
     }
@@ -213,10 +198,16 @@ public class MQTTClient {
     public func subscribe() {}
 
     public func disconnect() {
-        hasFinished = true
+        isFinished = true
         let mosquittoContext = self.mosquittoContext
-        operationQueue.addOperationWithBlock {
-            mosquitto_disconnect(mosquittoContext.mosquittoHandler)
+        let operationQueue = self.operationQueue
+        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
+            operationQueue.addOperationWithBlock {
+                mosquitto_disconnect(mosquittoContext.mosquittoHandler)
+                return
+            }
+            operationQueue.waitUntilAllOperationsAreFinished()
+            mosquitto_loop_stop(mosquittoContext.mosquittoHandler, false)
             mosquitto_context_destroy(mosquittoContext)
         }
     }

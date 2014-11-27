@@ -31,11 +31,9 @@
 #import "mosquitto.h"
 #import "Moscapsule/Moscapsule-Swift.h"
 
-void mosquitto_context_initialize(const char *clientId, bool cleanSession, __MosquittoContext *mosquittoContext)
+void mosquitto_context_setup(const char *clientId, bool cleanSession, __MosquittoContext *mosquittoContext)
 {
-    struct mosquitto *mosquittoHandler = mosquitto_new(clientId, cleanSession, (__bridge void*)mosquittoContext);
-
-    mosquittoContext.mosquittoHandler = mosquittoHandler;
+    mosquittoContext.mosquittoHandler = mosquitto_new(clientId, cleanSession, (__bridge void*)mosquittoContext);
     mosquittoContext.isConnected = false;
     setMosquittoCallbackBridge(mosquittoContext.mosquittoHandler);
 }
@@ -61,6 +59,7 @@ static void setMosquittoCallbackBridge(struct mosquitto *mosquittoHandler)
 static void on_connect(struct mosquitto *mosquittoHandler, void *obj, int returnCode)
 {
     __MosquittoContext *mosquittoContext = (__bridge __MosquittoContext*)obj;
+    mosquittoContext.isConnected = returnCode == 0 ? true : false;
     if (mosquittoContext.onConnectCallback) {
         mosquittoContext.onConnectCallback(returnCode);
     }
@@ -69,6 +68,7 @@ static void on_connect(struct mosquitto *mosquittoHandler, void *obj, int return
 static void on_disconnect(struct mosquitto *mosquittoHandler, void *obj, int reasonCode)
 {
     __MosquittoContext* mosquittoContext = (__bridge __MosquittoContext*)obj;
+    mosquittoContext.isConnected = false;
     if (mosquittoContext.onDisconnectCallback) {
         mosquittoContext.onDisconnectCallback(reasonCode);
     }

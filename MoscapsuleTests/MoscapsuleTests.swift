@@ -46,6 +46,13 @@ class MoscapsuleTests: XCTestCase {
     func testConnectToMQTTServer() {
         var mqttConfig = MQTTConfig(clientId: "cid", host: "test.mosquitto.org", port: 1883, keepAlive: 60)
         
+        mqttConfig.onConnectCallback = { returnCode in
+            NSLog("Return Code is \(returnCode) (this callback is defined in swift.)")
+        }
+        mqttConfig.onDisconnectCallback = { reasonCode in
+            NSLog("Reason Code is \(reasonCode) (this callback is defined in swift.)")
+        }
+        
         let mqttClient = MQTT.invokeMqttConnection(mqttConfig)
         sleep(2)
         mqttClient.disconnect()
