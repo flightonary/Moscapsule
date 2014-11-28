@@ -54,9 +54,45 @@ class MoscapsuleTests: XCTestCase {
         }
         
         let mqttClient = MQTT.invokeMqttConnection(mqttConfig)
-        sleep(2)
+        sleep(3)
+        XCTAssertTrue(mqttClient.isConnected)
         mqttClient.disconnect()
+        sleep(3)
+        XCTAssertFalse(mqttClient.isConnected)
+    }
+    
+    func testPublishAndSubscribe() {
+        var mqttConfigPub = MQTTConfig(clientId: "pub", host: "test.mosquitto.org", port: 1883, keepAlive: 60)
+        var published = false
+        var payload = "ほげほげ"
+        mqttConfigPub.onPublishCallback = { messageId in
+            NSLog("published")
+            published = true
+        }
+
+        var mqttConfigSub = MQTTConfig(clientId: "sub", host: "test.mosquitto.org", port: 1883, keepAlive: 60)
+        var subscribed = false
+        mqttConfigSub.onSubscribeCallback = { (messageId, grantedQos) in
+            NSLog("subscribed")
+            subscribed = true
+        }
+        mqttConfigSub.onMessageCallback = { mqttMessage in
+            XCTAssertEqual(mqttMessage.payloadString!, payload, "Received message is the same as published one!!")
+        }
+        
+        let mqttClientPub = MQTT.invokeMqttConnection(mqttConfigPub)
+        let mqttClientSub = MQTT.invokeMqttConnection(mqttConfigSub)
         sleep(2)
-        NSLog("reach to end of testConnectToMQTTServer")
+        
+        mqttClientSub.subscribe("testTopic", qos: 2)
+        sleep(2)
+        mqttClientPub.publishString(payload, topic: "testTopic", qos: 2, retain: false)
+        sleep(2)
+
+        XCTAssertTrue(published)
+        XCTAssertTrue(subscribed)
+
+        mqttClientPub.disconnect()
+        mqttClientSub.disconnect()
     }
 }

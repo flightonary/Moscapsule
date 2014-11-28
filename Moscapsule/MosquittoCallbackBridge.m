@@ -76,22 +76,34 @@ static void on_disconnect(struct mosquitto *mosquittoHandler, void *obj, int rea
 
 static void on_publish(struct mosquitto *mosquittoHandler, void *obj, int messageId)
 {
-    
+    __MosquittoContext* mosquittoContext = (__bridge __MosquittoContext*)obj;
+    if (mosquittoContext.onPublishCallback) {
+        mosquittoContext.onPublishCallback(messageId);
+    }
 }
 
 static void on_message(struct mosquitto *mosquittoHandler, void *obj, const struct mosquitto_message *message)
 {
-    
+    __MosquittoContext* mosquittoContext = (__bridge __MosquittoContext*)obj;
+    if (mosquittoContext.onMessageCallback) {
+        mosquittoContext.onMessageCallback(message);
+    }
 }
 
 static void on_subscribe(struct mosquitto *mosquittoHandler, void *obj, int messageId, int qos_count, const int *granted_qos)
 {
-    
+    __MosquittoContext* mosquittoContext = (__bridge __MosquittoContext*)obj;
+    if (mosquittoContext.onSubscribeCallback) {
+        mosquittoContext.onSubscribeCallback(messageId, qos_count, granted_qos);
+    }
 }
 
 static void on_unsubscribe(struct mosquitto *mosquittoHandler, void *obj, int messageId)
 {
-    
+    __MosquittoContext* mosquittoContext = (__bridge __MosquittoContext*)obj;
+    if (mosquittoContext.onUnsubscribeCallback) {
+        mosquittoContext.onUnsubscribeCallback(messageId);
+    }
 }
 
 static void on_log(struct mosquitto *mosquittoHandler, void *obj, int logLevel, const char *logMessage)

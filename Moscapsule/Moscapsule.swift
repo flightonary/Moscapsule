@@ -83,7 +83,7 @@ public class MQTTAuthOpts {
     }
 }
 
-public class MQTTConfig: __MQTTCallback {
+public class MQTTConfig {
     public let clientId: String
     public let host: String
     public let port: Int32
@@ -92,6 +92,13 @@ public class MQTTConfig: __MQTTCallback {
     public var mqttReconnOpts: MQTTReconnOpts
     public var mqttWillOpts: MQTTWillOpts?
     public var mqttAuthOpts: MQTTAuthOpts?
+    
+    public var onConnectCallback: ((returnCode: Int) -> Void)!
+    public var onDisconnectCallback: ((reasonCode: Int) -> Void)!
+    public var onPublishCallback: ((messageId: Int) -> Void)!
+    public var onMessageCallback: ((mqttMessage: MQTTMessage) -> Void)!
+    public var onSubscribeCallback: ((messageId: Int, grantedQos: Array<Int>) -> Void)!
+    public var onUnsubscribeCallback: ((messageId: Int) -> Void)!
     
     public init(clientId: String, host: String, port: Int32, keepAlive: Int32) {
         self.clientId = clientId
@@ -103,31 +110,37 @@ public class MQTTConfig: __MQTTCallback {
     }
 }
 
-@objc(__MQTTCallback)
-public class __MQTTCallback {
+@objc(__MosquittoContext)
+public class __MosquittoContext {
+    public var mosquittoHandler: COpaquePointer = COpaquePointer.null()
+    public var isConnected: Bool = false
     public var onConnectCallback: ((returnCode: Int) -> Void)!
     public var onDisconnectCallback: ((reasonCode: Int) -> Void)!
     public var onPublishCallback: ((messageId: Int) -> Void)!
-    public var onMessageCallback: ((mqttMessage: MQTTMessage) -> Void)!
-    public var onSubscribeCallback: ((messageId: Int, grantedQos: Array<Int>) -> Void)!
+    public var onMessageCallback: ((message: UnsafePointer<mosquitto_message>) -> Void)!
+    public var onSubscribeCallback: ((messageId: Int, qosCount: Int, grantedQos: UnsafePointer<Int32>) -> Void)!
     public var onUnsubscribeCallback: ((messageId: Int) -> Void)!
     internal init(){}
 }
 
-@objc(__MosquittoContext)
-public class __MosquittoContext: __MQTTCallback {
-    public var mosquittoHandler: COpaquePointer = COpaquePointer.null()
-    public var isConnected: Bool = false
-    internal override init(){}
-}
-
-@objc(MQTTMessage)
 public class MQTTMessage {
-    public let messageId: Int = 0
-    public let topic: String = ""
-    public let payload: NSData = NSData()
-    public let qos: Int = 0
-    public let retain: Bool = false
+    public let messageId: Int
+    public let topic: String
+    public let payload: NSData
+    public let qos: Int
+    public let retain: Bool
+    
+    public var payloadString: String? {
+        return NSString(data: payload, encoding: NSUTF8StringEncoding)
+    }
+
+    internal init(messageId: Int, topic: String, payload: NSData, qos: Int, retain: Bool) {
+        self.messageId = messageId
+        self.topic = topic
+        self.payload = payload
+        self.qos = qos
+        self.retain = retain
+    }
 }
 
 public class MQTT {
@@ -136,8 +149,8 @@ public class MQTT {
         mosquittoContext.onConnectCallback = mqttConfig.onConnectCallback
         mosquittoContext.onDisconnectCallback = mqttConfig.onDisconnectCallback
         mosquittoContext.onPublishCallback = mqttConfig.onPublishCallback
-        mosquittoContext.onMessageCallback = mqttConfig.onMessageCallback
-        mosquittoContext.onSubscribeCallback = mqttConfig.onSubscribeCallback
+        mosquittoContext.onMessageCallback = onMessageAdapter(mqttConfig.onMessageCallback)
+        mosquittoContext.onSubscribeCallback = onSubscribeAdapter(mqttConfig.onSubscribeCallback)
         mosquittoContext.onUnsubscribeCallback = mqttConfig.onUnsubscribeCallback
 
         // setup mosquittoHandler
@@ -172,6 +185,27 @@ public class MQTT {
         
         return MQTTClient(mosquittoContext: mosquittoContext)
     }
+
+    private class func onMessageAdapter(callback: ((MQTTMessage) -> Void)!) -> ((UnsafePointer<mosquitto_message>) -> Void)! {
+        return callback == nil ? nil : { (message: UnsafePointer<mosquitto_message>) in
+            let msg = message.memory
+            let topic = String.fromCString(msg.topic)!
+            let payload = NSData(bytes: msg.payload, length: Int(msg.payloadlen))
+            let mqttMessage = MQTTMessage(messageId: Int(msg.mid), topic: topic, payload: payload, qos: Int(msg.qos), retain: msg.retain)
+            callback(mqttMessage)
+        }
+    }
+
+    private class func onSubscribeAdapter(callback: ((Int, Array<Int>) -> Void)!) -> ((Int, Int, UnsafePointer<Int32>) -> Void)! {
+        return callback == nil ? nil : { (messageId: Int, qosCount: Int, grantedQos: UnsafePointer<Int32>) in
+            var grantedQosList = [Int](count: qosCount, repeatedValue: 0)
+            Array(0..<qosCount).reduce(grantedQos) { (qosPointer, index) in
+                grantedQosList[index] = Int(qosPointer.memory)
+                return qosPointer.successor()
+            }
+            callback(messageId, grantedQosList)
+        }
+    }
 }
 
 public class MQTTClient {
@@ -189,26 +223,59 @@ public class MQTTClient {
     }
     
     deinit {
-        if(!isFinished) {
-            disconnect()
+        disconnect()
+    }
+    
+    public func publish(payload: NSData, topic: String, qos: Int32, retain: Bool) {
+        if (!isFinished) {
+            let mosquittoContext = self.mosquittoContext
+            operationQueue.addOperationWithBlock {
+                var messageId: Int32 = 0
+                mosquitto_publish(mosquittoContext.mosquittoHandler, &messageId, topic.cCharArray, Int32(payload.length), payload.bytes, qos, retain)
+            }
         }
     }
     
-    public func publish() {}
-    public func subscribe() {}
+    public func publishString(payload: String, topic: String, qos: Int32, retain: Bool) {
+        if let payloadData = (payload as NSString).dataUsingEncoding(NSUTF8StringEncoding) {
+            self.publish(payloadData, topic: topic, qos: qos, retain: retain)
+        }
+    }
+
+    public func subscribe(topic: String, qos: Int32) {
+        if (!isFinished) {
+            let mosquittoContext = self.mosquittoContext
+            operationQueue.addOperationWithBlock {
+                var messageId: Int32 = 0
+                mosquitto_subscribe(mosquittoContext.mosquittoHandler, &messageId, topic.cCharArray, qos)
+            }
+        }
+    }
+
+    public func unsubscribe(topic: String) {
+        if (!isFinished) {
+            let mosquittoContext = self.mosquittoContext
+            operationQueue.addOperationWithBlock {
+                var messageId: Int32 = 0
+                mosquitto_unsubscribe(mosquittoContext.mosquittoHandler, &messageId, topic.cCharArray)
+            }
+        }
+    }
 
     public func disconnect() {
-        isFinished = true
-        let mosquittoContext = self.mosquittoContext
-        let operationQueue = self.operationQueue
-        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
-            operationQueue.addOperationWithBlock {
-                mosquitto_disconnect(mosquittoContext.mosquittoHandler)
-                return
+        if (!isFinished) {
+            isFinished = true
+            let mosquittoContext = self.mosquittoContext
+            let operationQueue = self.operationQueue
+            dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
+                operationQueue.addOperationWithBlock {
+                    mosquitto_disconnect(mosquittoContext.mosquittoHandler)
+                    return
+                }
+                operationQueue.waitUntilAllOperationsAreFinished()
+                mosquitto_loop_stop(mosquittoContext.mosquittoHandler, false)
+                mosquitto_context_destroy(mosquittoContext)
             }
-            operationQueue.waitUntilAllOperationsAreFinished()
-            mosquitto_loop_stop(mosquittoContext.mosquittoHandler, false)
-            mosquitto_context_destroy(mosquittoContext)
         }
     }
 }

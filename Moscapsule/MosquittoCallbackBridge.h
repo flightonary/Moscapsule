@@ -32,7 +32,6 @@
 struct mosquitto;
 struct mosquitto_message;
 
-@class MQTTMessage;
 @class __MosquittoContext;
 
 void mosquitto_context_setup(const char *client_id, bool clean_session, __MosquittoContext *mosquittoContext);
