@@ -38,7 +38,7 @@ void mosquitto_context_setup(const char *clientId, bool cleanSession, __Mosquitt
     setMosquittoCallbackBridge(mosquittoContext.mosquittoHandler);
 }
 
-void mosquitto_context_destroy(__MosquittoContext *mosquittoContext)
+void mosquitto_context_cleanup(__MosquittoContext *mosquittoContext)
 {
     mosquitto_destroy(mosquittoContext.mosquittoHandler);
 }

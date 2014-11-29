@@ -35,7 +35,7 @@ struct mosquitto_message;
 @class __MosquittoContext;
 
 void mosquitto_context_setup(const char *client_id, bool clean_session, __MosquittoContext *mosquittoContext);
-void mosquitto_context_destroy(__MosquittoContext *mosquitto_context);
+void mosquitto_context_cleanup(__MosquittoContext *mosquitto_context);
 
 static void setMosquittoCallbackBridge(struct mosquitto *);
 

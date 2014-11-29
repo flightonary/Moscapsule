@@ -44,7 +44,7 @@ class MoscapsuleTests: XCTestCase {
     }
 
     func testConnectToMQTTServer() {
-        var mqttConfig = MQTTConfig(clientId: "cid", host: "test.mosquitto.org", port: 1883, keepAlive: 60)
+        let mqttConfig = MQTTConfig(clientId: "connect_test", host: "test.mosquitto.org", port: 1883, keepAlive: 60)
         
         mqttConfig.onConnectCallback = { returnCode in
             NSLog("Return Code is \(returnCode) (this callback is defined in swift.)")
@@ -54,36 +54,37 @@ class MoscapsuleTests: XCTestCase {
         }
         
         let mqttClient = MQTT.invokeMqttConnection(mqttConfig)
-        sleep(3)
+        sleep(2)
         XCTAssertTrue(mqttClient.isConnected)
         mqttClient.disconnect()
-        sleep(3)
+        sleep(2)
         XCTAssertFalse(mqttClient.isConnected)
     }
     
     func testPublishAndSubscribe() {
-        var mqttConfigPub = MQTTConfig(clientId: "pub", host: "test.mosquitto.org", port: 1883, keepAlive: 60)
+        let mqttConfigPub = MQTTConfig(clientId: "pub", host: "test.mosquitto.org", port: 1883, keepAlive: 60)
         var published = false
         var payload = "ほげほげ"
         mqttConfigPub.onPublishCallback = { messageId in
-            NSLog("published")
+            NSLog("published (mid=\(messageId))")
             published = true
         }
 
-        var mqttConfigSub = MQTTConfig(clientId: "sub", host: "test.mosquitto.org", port: 1883, keepAlive: 60)
+        let mqttConfigSub = MQTTConfig(clientId: "sub", host: "test.mosquitto.org", port: 1883, keepAlive: 60)
         var subscribed = false
+        var received = false
         mqttConfigSub.onSubscribeCallback = { (messageId, grantedQos) in
-            NSLog("subscribed")
+            NSLog("subscribed (mid=\(messageId),grantedQos=\(grantedQos))")
             subscribed = true
         }
         mqttConfigSub.onMessageCallback = { mqttMessage in
-            XCTAssertEqual(mqttMessage.payloadString!, payload, "Received message is the same as published one!!")
+            received = true
+            NSLog("MQTT Message received: payload=\(mqttMessage.payloadString)")
+            XCTAssertEqual(mqttMessage.payloadString!, payload, "Received message must be the same as published one!!")
         }
         
         let mqttClientPub = MQTT.invokeMqttConnection(mqttConfigPub)
         let mqttClientSub = MQTT.invokeMqttConnection(mqttConfigSub)
-        sleep(2)
-        
         mqttClientSub.subscribe("testTopic", qos: 2)
         sleep(2)
         mqttClientPub.publishString(payload, topic: "testTopic", qos: 2, retain: false)
@@ -91,8 +92,49 @@ class MoscapsuleTests: XCTestCase {
 
         XCTAssertTrue(published)
         XCTAssertTrue(subscribed)
+        XCTAssertTrue(received)
 
         mqttClientPub.disconnect()
         mqttClientSub.disconnect()
+    }
+    
+    func testUnsubscribe() {
+        let mqttConfig = MQTTConfig(clientId: "unsubscribe_test", host: "test.mosquitto.org", port: 1883, keepAlive: 60)
+        var subscribed = false
+        var unsubscribed = false
+        mqttConfig.onSubscribeCallback = { (messageId, grantedQos) in
+            NSLog("subscribed (mid=\(messageId),grantedQos=\(grantedQos))")
+            subscribed = true
+        }
+        mqttConfig.onUnsubscribeCallback = { messageId in
+            NSLog("unsubscribed (mid=\(messageId))")
+            unsubscribed = true
+        }
+        
+        let mqttClient = MQTT.invokeMqttConnection(mqttConfig)
+        mqttClient.subscribe("testTopic", qos: 2)
+        sleep(2)
+        mqttClient.unsubscribe("testTopic")
+        sleep(2)
+        
+        XCTAssertTrue(subscribed)
+        XCTAssertTrue(unsubscribed)
+        mqttClient.disconnect()
+    }
+    
+    func testAutoDisconnect() {
+        var disconnected: Bool = false
+
+        let closure = { () -> Void in
+            let mqttConfig = MQTTConfig(clientId: "auto_disconnect_test", host: "test.mosquitto.org", port: 1883, keepAlive: 60)
+            mqttConfig.onDisconnectCallback = { reasonCode in
+                disconnected = true
+            }
+            let mqttClient = MQTT.invokeMqttConnection(mqttConfig)
+        }
+        closure()
+        sleep(3)
+        
+        XCTAssertTrue(disconnected)
     }
 }

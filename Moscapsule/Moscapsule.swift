@@ -101,7 +101,10 @@ public class MQTTConfig {
     public var onUnsubscribeCallback: ((messageId: Int) -> Void)!
     
     public init(clientId: String, host: String, port: Int32, keepAlive: Int32) {
-        self.clientId = clientId
+        // MQTT client ID is restricted to 23 characters in the MQTT v3.1 spec
+        self.clientId = { max in
+            (clientId as NSString).length <= max ? clientId : clientId.substringToIndex(advance(clientId.startIndex, max))
+        }(23)
         self.host = host
         self.port = port
         self.keepAlive = keepAlive
@@ -174,16 +177,18 @@ public class MQTT {
             mosquitto_username_pw_set(mosquittoContext.mosquittoHandler, mqttAuthOpts.username.cCharArray, mqttAuthOpts.password.cCharArray)
         }
         
-        let mosquittoHandler = mosquittoContext.mosquittoHandler
+        // start MQTTClient
+        let mqttClient = MQTTClient(mosquittoContext: mosquittoContext)
         let host = mqttConfig.host
         let port = mqttConfig.port
         let keepAlive = mqttConfig.keepAlive
         dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
-            mosquitto_connect(mosquittoHandler, host.cCharArray, port, keepAlive)
-            mosquitto_loop_start(mosquittoHandler)
+            mosquitto_connect(mosquittoContext.mosquittoHandler, host.cCharArray, port, keepAlive)
+            mosquitto_loop_start(mosquittoContext.mosquittoHandler)
+            mqttClient.operationQueue.suspended = false
         }
         
-        return MQTTClient(mosquittoContext: mosquittoContext)
+        return mqttClient
     }
 
     private class func onMessageAdapter(callback: ((MQTTMessage) -> Void)!) -> ((UnsafePointer<mosquitto_message>) -> Void)! {
@@ -210,7 +215,7 @@ public class MQTT {
 
 public class MQTTClient {
     private let mosquittoContext: __MosquittoContext
-    private let operationQueue: NSOperationQueue
+    internal let operationQueue: NSOperationQueue
     private var isFinished: Bool
     public var isConnected: Bool {
         return mosquittoContext.isConnected
@@ -220,22 +225,24 @@ public class MQTTClient {
         self.mosquittoContext = mosquittoContext
         self.operationQueue = NSOperationQueue()
         self.isFinished = false
+        
+        self.operationQueue.name = "MQTT Client Operation Queue"
+        self.operationQueue.suspended = true
     }
     
     deinit {
         disconnect()
     }
-    
+
     public func publish(payload: NSData, topic: String, qos: Int32, retain: Bool) {
-        if (!isFinished) {
-            let mosquittoContext = self.mosquittoContext
+        synchronized { mosquittoContext, operationQueue in
             operationQueue.addOperationWithBlock {
                 var messageId: Int32 = 0
                 mosquitto_publish(mosquittoContext.mosquittoHandler, &messageId, topic.cCharArray, Int32(payload.length), payload.bytes, qos, retain)
             }
         }
     }
-    
+
     public func publishString(payload: String, topic: String, qos: Int32, retain: Bool) {
         if let payloadData = (payload as NSString).dataUsingEncoding(NSUTF8StringEncoding) {
             self.publish(payloadData, topic: topic, qos: qos, retain: retain)
@@ -243,8 +250,7 @@ public class MQTTClient {
     }
 
     public func subscribe(topic: String, qos: Int32) {
-        if (!isFinished) {
-            let mosquittoContext = self.mosquittoContext
+        synchronized { mosquittoContext, operationQueue in
             operationQueue.addOperationWithBlock {
                 var messageId: Int32 = 0
                 mosquitto_subscribe(mosquittoContext.mosquittoHandler, &messageId, topic.cCharArray, qos)
@@ -253,8 +259,7 @@ public class MQTTClient {
     }
 
     public func unsubscribe(topic: String) {
-        if (!isFinished) {
-            let mosquittoContext = self.mosquittoContext
+        synchronized { mosquittoContext, operationQueue in
             operationQueue.addOperationWithBlock {
                 var messageId: Int32 = 0
                 mosquitto_unsubscribe(mosquittoContext.mosquittoHandler, &messageId, topic.cCharArray)
@@ -263,20 +268,26 @@ public class MQTTClient {
     }
 
     public func disconnect() {
-        if (!isFinished) {
-            isFinished = true
-            let mosquittoContext = self.mosquittoContext
-            let operationQueue = self.operationQueue
+        synchronized { mosquittoContext, operationQueue in
+            self.isFinished = true
+            operationQueue.addOperationWithBlock {
+                mosquitto_disconnect(mosquittoContext.mosquittoHandler)
+                return
+            }
             dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
-                operationQueue.addOperationWithBlock {
-                    mosquitto_disconnect(mosquittoContext.mosquittoHandler)
-                    return
-                }
                 operationQueue.waitUntilAllOperationsAreFinished()
                 mosquitto_loop_stop(mosquittoContext.mosquittoHandler, false)
-                mosquitto_context_destroy(mosquittoContext)
+                mosquitto_context_cleanup(mosquittoContext)
             }
         }
+    }
+
+    private func synchronized(operation: (__MosquittoContext, NSOperationQueue) -> Void) {
+        objc_sync_enter(self)
+        if (!isFinished) {
+            operation(self.mosquittoContext, self.operationQueue)
+        }
+        objc_sync_exit(self)
     }
 }
 
