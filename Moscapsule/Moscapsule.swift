@@ -104,7 +104,7 @@ public class MQTTConfig {
         // MQTT client ID is restricted to 23 characters in the MQTT v3.1 spec
         self.clientId = { max in
             (clientId as NSString).length <= max ? clientId : clientId.substringToIndex(advance(clientId.startIndex, max))
-        }(23)
+        }(Int(MOSQ_MQTT_ID_MAX_LENGTH))
         self.host = host
         self.port = port
         self.keepAlive = keepAlive
