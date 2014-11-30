@@ -36,7 +36,7 @@ public func cleanup() {
     mosquitto_lib_cleanup()
 }
 
-public class MQTTReconnOpts {
+public struct MQTTReconnOpts {
     public let reconnect_delay_s: UInt32
     public let reconnect_delay_max_s: UInt32
     public let reconnect_exponential_backoff: Bool
@@ -54,7 +54,7 @@ public class MQTTReconnOpts {
     }
 }
 
-public class MQTTWillOpts {
+public struct MQTTWillOpts {
     public let topic: String
     public let payload: NSData
     public let qos: Int32
@@ -67,13 +67,13 @@ public class MQTTWillOpts {
         self.retain = retain
     }
 
-    public convenience init(topic: String, payload: String, qos: Int32, retain: Bool) {
+    public init(topic: String, payload: String, qos: Int32, retain: Bool) {
         let rawPayload = payload.dataUsingEncoding(NSUTF8StringEncoding)!
         self.init(topic: topic, payload: rawPayload, qos: qos, retain: retain)
     }
 }
 
-public class MQTTAuthOpts {
+public struct MQTTAuthOpts {
     public let username: String
     public let password: String
 
@@ -93,7 +93,7 @@ public class MQTTConfig {
     public var mqttWillOpts: MQTTWillOpts?
     public var mqttAuthOpts: MQTTAuthOpts?
     
-    public var onConnectCallback: ((returnCode: Int) -> Void)!
+    public var onConnectCallback: ((returnCode: Int) -> Void)?
     public var onDisconnectCallback: ((reasonCode: Int) -> Void)!
     public var onPublishCallback: ((messageId: Int) -> Void)!
     public var onMessageCallback: ((mqttMessage: MQTTMessage) -> Void)!
@@ -114,7 +114,7 @@ public class MQTTConfig {
 }
 
 @objc(__MosquittoContext)
-public class __MosquittoContext {
+public final class __MosquittoContext {
     public var mosquittoHandler: COpaquePointer = COpaquePointer.null()
     public var isConnected: Bool = false
     public var onConnectCallback: ((returnCode: Int) -> Void)!
@@ -126,7 +126,7 @@ public class __MosquittoContext {
     internal init(){}
 }
 
-public class MQTTMessage {
+public final class MQTTMessage {
     public let messageId: Int
     public let topic: String
     public let payload: NSData
@@ -146,7 +146,7 @@ public class MQTTMessage {
     }
 }
 
-public class MQTT {
+public final class MQTT {
     public class func invokeMqttConnection(mqttConfig: MQTTConfig) -> MQTTClient {
         let mosquittoContext = __MosquittoContext()
         mosquittoContext.onConnectCallback = mqttConfig.onConnectCallback
@@ -213,7 +213,7 @@ public class MQTT {
     }
 }
 
-public class MQTTClient {
+public final class MQTTClient {
     private let mosquittoContext: __MosquittoContext
     internal let operationQueue: NSOperationQueue
     private var isFinished: Bool
