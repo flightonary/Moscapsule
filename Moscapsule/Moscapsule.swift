@@ -83,6 +83,16 @@ public struct MQTTAuthOpts {
     }
 }
 
+public struct MQTTPublishOpts {
+    public let max_inflight_messages: UInt32
+    public let message_retry: UInt32
+    
+    public init(max_inflight_messages: UInt32, message_retry: UInt32) {
+        self.max_inflight_messages = max_inflight_messages
+        self.message_retry = message_retry
+    }
+}
+
 public class MQTTConfig {
     public let clientId: String
     public let host: String
@@ -92,6 +102,7 @@ public class MQTTConfig {
     public var mqttReconnOpts: MQTTReconnOpts
     public var mqttWillOpts: MQTTWillOpts?
     public var mqttAuthOpts: MQTTAuthOpts?
+    public var mqttPublishOpts: MQTTPublishOpts?
     
     public var onConnectCallback: ((returnCode: Int) -> Void)?
     public var onDisconnectCallback: ((reasonCode: Int) -> Void)!
@@ -175,6 +186,12 @@ public final class MQTT {
         // set MQTT Authentication Options
         if let mqttAuthOpts = mqttConfig.mqttAuthOpts {
             mosquitto_username_pw_set(mosquittoContext.mosquittoHandler, mqttAuthOpts.username.cCharArray, mqttAuthOpts.password.cCharArray)
+        }
+        
+        // set MQTT Publish Options
+        if let mqttPublishOpts = mqttConfig.mqttPublishOpts {
+            mosquitto_max_inflight_messages_set(mosquittoContext.mosquittoHandler, mqttPublishOpts.max_inflight_messages)
+            mosquitto_message_retry_set(mosquittoContext.mosquittoHandler, mqttPublishOpts.message_retry)
         }
         
         // start MQTTClient
@@ -280,6 +297,10 @@ public final class MQTTClient {
                 mosquitto_context_cleanup(mosquittoContext)
             }
         }
+    }
+
+    public func awaitRequestCompletion() {
+        operationQueue.waitUntilAllOperationsAreFinished()
     }
 
     private func synchronized(operation: (__MosquittoContext, NSOperationQueue) -> Void) {
