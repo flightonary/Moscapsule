@@ -85,6 +85,12 @@ public enum Mosq_Return: Int {
     case MOSQ_EAI = 15
 }
 
+public struct Qos {
+    public static let At_Most_Once: Int32  = 0  // Fire and Forget, i.e. <=1
+    public static let At_Least_Once: Int32 = 1  // Acknowledged delivery, i.e. >=1
+    public static let Exactly_Once: Int32  = 2  // Assured delivery, i.e. =1
+}
+
 public func initialize() {
     mosquitto_lib_init()
 }
@@ -165,7 +171,7 @@ public class MQTTConfig {
     public var onDisconnectCallback: ((reasonCode: ReasonCode) -> Void)!
     public var onPublishCallback: ((messageId: Int) -> Void)!
     public var onMessageCallback: ((mqttMessage: MQTTMessage) -> Void)!
-    public var onSubscribeCallback: ((messageId: Int, grantedQos: Array<Int>) -> Void)!
+    public var onSubscribeCallback: ((messageId: Int, grantedQos: Array<Int32>) -> Void)!
     public var onUnsubscribeCallback: ((messageId: Int) -> Void)!
     
     public init(clientId: String, host: String, port: Int32, keepAlive: Int32) {
@@ -198,14 +204,14 @@ public final class MQTTMessage {
     public let messageId: Int
     public let topic: String
     public let payload: NSData
-    public let qos: Int
+    public let qos: Int32
     public let retain: Bool
     
     public var payloadString: String? {
         return NSString(data: payload, encoding: NSUTF8StringEncoding)
     }
 
-    internal init(messageId: Int, topic: String, payload: NSData, qos: Int, retain: Bool) {
+    internal init(messageId: Int, topic: String, payload: NSData, qos: Int32, retain: Bool) {
         self.messageId = messageId
         self.topic = topic
         self.payload = payload
@@ -236,8 +242,8 @@ public final class MQTT {
         // set MQTT Will Options
         if let mqttWillOpts = mqttConfig.mqttWillOpts {
             mosquitto_will_set(mosquittoContext.mosquittoHandler, mqttWillOpts.topic.cCharArray,
-                Int32(mqttWillOpts.payload.length), mqttWillOpts.payload.bytes,
-                mqttWillOpts.qos, mqttWillOpts.retain)
+                               Int32(mqttWillOpts.payload.length), mqttWillOpts.payload.bytes,
+                               mqttWillOpts.qos, mqttWillOpts.retain)
         }
         
         // set MQTT Authentication Options
@@ -280,20 +286,20 @@ public final class MQTT {
     }
 
     private class func onMessageAdapter(callback: ((MQTTMessage) -> Void)!) -> ((UnsafePointer<mosquitto_message>) -> Void)! {
-        return callback == nil ? nil : { (message: UnsafePointer<mosquitto_message>) in
-            let msg = message.memory
-            let topic = String.fromCString(msg.topic)!
-            let payload = NSData(bytes: msg.payload, length: Int(msg.payloadlen))
-            let mqttMessage = MQTTMessage(messageId: Int(msg.mid), topic: topic, payload: payload, qos: Int(msg.qos), retain: msg.retain)
+        return callback == nil ? nil : { (rawMessage: UnsafePointer<mosquitto_message>) in
+            let message = rawMessage.memory
+            let topic = String.fromCString(message.topic)!
+            let payload = NSData(bytes: message.payload, length: Int(message.payloadlen))
+            let mqttMessage = MQTTMessage(messageId: Int(message.mid), topic: topic, payload: payload, qos: message.qos, retain: message.retain)
             callback(mqttMessage)
         }
     }
 
-    private class func onSubscribeAdapter(callback: ((Int, Array<Int>) -> Void)!) -> ((Int, Int, UnsafePointer<Int32>) -> Void)! {
+    private class func onSubscribeAdapter(callback: ((Int, Array<Int32>) -> Void)!) -> ((Int, Int, UnsafePointer<Int32>) -> Void)! {
         return callback == nil ? nil : { (messageId: Int, qosCount: Int, grantedQos: UnsafePointer<Int32>) in
-            var grantedQosList = [Int](count: qosCount, repeatedValue: 0)
+            var grantedQosList = [Int32](count: qosCount, repeatedValue: Qos.At_Least_Once)
             Array(0..<qosCount).reduce(grantedQos) { (qosPointer, index) in
-                grantedQosList[index] = Int(qosPointer.memory)
+                grantedQosList[index] = qosPointer.memory
                 return qosPointer.successor()
             }
             callback(messageId, grantedQosList)
