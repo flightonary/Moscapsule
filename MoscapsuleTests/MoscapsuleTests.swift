@@ -47,10 +47,10 @@ class MoscapsuleTests: XCTestCase {
         let mqttConfig = MQTTConfig(clientId: "connect_test", host: "test.mosquitto.org", port: 1883, keepAlive: 60)
         
         mqttConfig.onConnectCallback = { returnCode in
-            NSLog("Return Code is \(returnCode) (this callback is defined in swift.)")
+            NSLog("Return Code is \(returnCode.description) (this callback is declared in swift.)")
         }
         mqttConfig.onDisconnectCallback = { reasonCode in
-            NSLog("Reason Code is \(reasonCode) (this callback is defined in swift.)")
+            NSLog("Reason Code is \(reasonCode.description) (this callback is declared in swift.)")
         }
         
         let mqttClient = MQTT.invokeMqttConnection(mqttConfig)
@@ -136,5 +136,46 @@ class MoscapsuleTests: XCTestCase {
         sleep(3)
         
         XCTAssertTrue(disconnected)
+    }
+
+    func testCompletion() {
+        let mqttConfig = MQTTConfig(clientId: "completion_test", host: "test.mosquitto.org", port: 1883, keepAlive: 60)
+        mqttConfig.onPublishCallback = { messageId in
+            NSLog("published (mid=\(messageId))")
+        }
+        mqttConfig.onSubscribeCallback = { (messageId, grantedQos) in
+            NSLog("subscribed (mid=\(messageId),grantedQos=\(grantedQos))")
+        }
+        mqttConfig.onUnsubscribeCallback = { messageId in
+            NSLog("unsubscribed (mid=\(messageId))")
+        }
+        var published = false
+        var subscribed = false
+        var unsubscribed = false
+
+        let mqttClient = MQTT.invokeMqttConnection(mqttConfig)
+        mqttClient.publishString("msg", topic: "topic", qos: 2, retain: false) { mosqReturn in
+            published = true
+            NSLog("publish completion: \(mosqReturn.rawValue)")
+        }
+        mqttClient.awaitRequestCompletion()
+        XCTAssertTrue(published)
+
+        mqttClient.subscribe("testTopic", qos: 2) { mosqReturn in
+            subscribed = true
+            NSLog("subscribe completion: \(mosqReturn.rawValue)")
+        }
+        mqttClient.awaitRequestCompletion()
+        XCTAssertTrue(subscribed)
+
+        mqttClient.unsubscribe("testTopic") { mosqReturn in
+            unsubscribed = true
+            NSLog("unsubscribe completion: \(mosqReturn.rawValue)")
+        }
+        mqttClient.awaitRequestCompletion()
+        XCTAssertTrue(unsubscribed)
+
+        sleep(3)
+        mqttClient.disconnect()
     }
 }
