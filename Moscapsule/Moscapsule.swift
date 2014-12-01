@@ -328,39 +328,39 @@ public final class MQTTClient {
         disconnect()
     }
 
-    public func publish(payload: NSData, topic: String, qos: Int32, retain: Bool, requestCompletion: ((Mosq_Return) -> Void)? = nil) {
+    public func publish(payload: NSData, topic: String, qos: Int32, retain: Bool, requestCompletion: ((Mosq_Return, Int) -> Void)? = nil) {
         synchronized { mosquittoContext, operationQueue in
             operationQueue.addOperationWithBlock {
                 var messageId: Int32 = 0
                 let mosqReturn = mosquitto_publish(mosquittoContext.mosquittoHandler, &messageId, topic.cCharArray,
                                                    Int32(payload.length), payload.bytes, qos, retain)
-                requestCompletion?(Mosq_Return(rawValue: Int(mosqReturn))!)
+                requestCompletion?(Mosq_Return(rawValue: Int(mosqReturn))!, Int(messageId))
             }
         }
     }
 
-    public func publishString(payload: String, topic: String, qos: Int32, retain: Bool, requestCompletion: ((Mosq_Return) -> Void)? = nil) {
+    public func publishString(payload: String, topic: String, qos: Int32, retain: Bool, requestCompletion: ((Mosq_Return, Int) -> Void)? = nil) {
         if let payloadData = (payload as NSString).dataUsingEncoding(NSUTF8StringEncoding) {
             self.publish(payloadData, topic: topic, qos: qos, retain: retain, requestCompletion)
         }
     }
 
-    public func subscribe(topic: String, qos: Int32, requestCompletion: ((Mosq_Return) -> Void)? = nil) {
+    public func subscribe(topic: String, qos: Int32, requestCompletion: ((Mosq_Return, Int) -> Void)? = nil) {
         synchronized { mosquittoContext, operationQueue in
             operationQueue.addOperationWithBlock {
                 var messageId: Int32 = 0
                 let mosqReturn = mosquitto_subscribe(mosquittoContext.mosquittoHandler, &messageId, topic.cCharArray, qos)
-                requestCompletion?(Mosq_Return(rawValue: Int(mosqReturn))!)
+                requestCompletion?(Mosq_Return(rawValue: Int(mosqReturn))!, Int(messageId))
             }
         }
     }
 
-    public func unsubscribe(topic: String, requestCompletion: ((Mosq_Return) -> Void)? = nil) {
+    public func unsubscribe(topic: String, requestCompletion: ((Mosq_Return, Int) -> Void)? = nil) {
         synchronized { mosquittoContext, operationQueue in
             operationQueue.addOperationWithBlock {
                 var messageId: Int32 = 0
                 let mosqReturn = mosquitto_unsubscribe(mosquittoContext.mosquittoHandler, &messageId, topic.cCharArray)
-                requestCompletion?(Mosq_Return(rawValue: Int(mosqReturn))!)
+                requestCompletion?(Mosq_Return(rawValue: Int(mosqReturn))!, Int(messageId))
             }
         }
     }

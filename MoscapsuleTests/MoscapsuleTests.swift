@@ -154,23 +154,23 @@ class MoscapsuleTests: XCTestCase {
         var unsubscribed = false
 
         let mqttClient = MQTT.invokeMqttConnection(mqttConfig)
-        mqttClient.publishString("msg", topic: "topic", qos: 2, retain: false) { mosqReturn in
+        mqttClient.publishString("msg", topic: "topic", qos: 2, retain: false) { mosqReturn, messageId in
             published = true
-            NSLog("publish completion: \(mosqReturn.rawValue)")
+            NSLog("publish completion: mosq_return=\(mosqReturn.rawValue) messageId=\(messageId)")
         }
         mqttClient.awaitRequestCompletion()
         XCTAssertTrue(published)
 
-        mqttClient.subscribe("testTopic", qos: 2) { mosqReturn in
+        mqttClient.subscribe("testTopic", qos: 2) { mosqReturn, messageId in
             subscribed = true
-            NSLog("subscribe completion: \(mosqReturn.rawValue)")
+            NSLog("subscribe completion: mosq_return=\(mosqReturn.rawValue) messageId=\(messageId)")
         }
         mqttClient.awaitRequestCompletion()
         XCTAssertTrue(subscribed)
 
-        mqttClient.unsubscribe("testTopic") { mosqReturn in
+        mqttClient.unsubscribe("testTopic") { mosqReturn, messageId in
             unsubscribed = true
-            NSLog("unsubscribe completion: \(mosqReturn.rawValue)")
+            NSLog("unsubscribe completion: mosq_return=\(mosqReturn.rawValue) messageId=\(messageId)")
         }
         mqttClient.awaitRequestCompletion()
         XCTAssertTrue(unsubscribed)
