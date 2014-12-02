@@ -59,6 +59,7 @@ class MoscapsuleTests: XCTestCase {
         mqttClient.disconnect()
         sleep(2)
         XCTAssertFalse(mqttClient.isConnected)
+        XCTAssertTrue(mqttClient.isFinished)
     }
     
     func testPublishAndSubscribe() {

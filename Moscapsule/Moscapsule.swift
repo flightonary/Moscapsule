@@ -310,7 +310,7 @@ public final class MQTT {
 public final class MQTTClient {
     private let mosquittoContext: __MosquittoContext
     internal let operationQueue: NSOperationQueue
-    private var isFinished: Bool
+    public private(set) var isFinished: Bool
     public var isConnected: Bool {
         return mosquittoContext.isConnected
     }
