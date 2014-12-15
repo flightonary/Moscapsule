@@ -156,6 +156,47 @@ public struct MQTTPublishOpts {
     }
 }
 
+public struct MQTTServerCert {
+    public let cafile: String?
+    public let capath: String?
+    
+    public init(cafile: String?, capath: String?) {
+        self.cafile = cafile
+        self.capath = capath
+    }
+}
+
+public struct MQTTClientCert {
+    public let certfile: String
+    public let keyfile: String
+    public let keyfile_passwd: String?
+    
+    public init(certfile: String, keyfile: String, keyfile_passwd: String?) {
+        self.certfile = certfile
+        self.keyfile = keyfile
+        self.keyfile_passwd = keyfile_passwd
+    }
+}
+
+public enum CertReqs: Int32 {
+    case SSL_VERIFY_NONE = 0
+    case SSL_VERIFY_PEER = 1
+}
+
+public struct MQTTTlsOpts {
+    public let tls_insecure: Bool
+    public let cert_reqs: CertReqs
+    public let tls_version: String?
+    public let ciphers: String?
+    
+    public init(tls_insecure: Bool, cert_reqs: CertReqs, tls_version: String?, ciphers: String?) {
+        self.tls_insecure = tls_insecure
+        self.cert_reqs = cert_reqs
+        self.tls_version = tls_version
+        self.ciphers = ciphers
+    }
+}
+
 public class MQTTConfig {
     public let clientId: String
     public let host: String
@@ -166,6 +207,9 @@ public class MQTTConfig {
     public var mqttWillOpts: MQTTWillOpts?
     public var mqttAuthOpts: MQTTAuthOpts?
     public var mqttPublishOpts: MQTTPublishOpts?
+    public var mqttServerCert: MQTTServerCert?
+    public var mqttClientCert: MQTTClientCert?
+    public var mqttTlsOpts: MQTTTlsOpts?
     
     public var onConnectCallback: ((returnCode: ReturnCode) -> Void)?
     public var onDisconnectCallback: ((reasonCode: ReasonCode) -> Void)!
@@ -197,6 +241,7 @@ public final class __MosquittoContext {
     public var onMessageCallback: ((message: UnsafePointer<mosquitto_message>) -> Void)!
     public var onSubscribeCallback: ((messageId: Int, qosCount: Int, grantedQos: UnsafePointer<Int32>) -> Void)!
     public var onUnsubscribeCallback: ((messageId: Int) -> Void)!
+    public var keyfile_passwd: String = ""
     internal init(){}
 }
 
@@ -256,7 +301,21 @@ public final class MQTT {
             mosquitto_max_inflight_messages_set(mosquittoContext.mosquittoHandler, mqttPublishOpts.max_inflight_messages)
             mosquitto_message_retry_set(mosquittoContext.mosquittoHandler, mqttPublishOpts.message_retry)
         }
-        
+
+        // set Server/Client Certificate
+        if mqttConfig.mqttServerCert != nil || mqttConfig.mqttClientCert != nil {
+            let sc = mqttConfig.mqttServerCert
+            let cc = mqttConfig.mqttClientCert
+            mosquittoContext.keyfile_passwd = cc?.keyfile_passwd ?? ""
+            mosquitto_tls_set_bridge(sc?.cafile, sc?.capath, cc?.certfile, cc?.keyfile, mosquittoContext)
+        }
+
+        // set TLS Options
+        if let mqttTlsOpts = mqttConfig.mqttTlsOpts {
+            mosquitto_tls_insecure_set(mosquittoContext.mosquittoHandler, mqttTlsOpts.tls_insecure)
+            mosquitto_tls_opts_set_bridge(mqttTlsOpts.cert_reqs.rawValue, mqttTlsOpts.tls_version, mqttTlsOpts.ciphers, mosquittoContext)
+        }
+
         // start MQTTClient
         let mqttClient = MQTTClient(mosquittoContext: mosquittoContext)
         let host = mqttConfig.host
