@@ -153,6 +153,7 @@
 		09CF6B161A21F78700A97383 /* Supporting Files */ = {
 			isa = PBXGroup;
 			children = (
+				C7D24C911A3E94AC00C33384 /* download_mosquitto.sh */,
 				09CF6B171A21F78700A97383 /* Info.plist */,
 			);
 			name = "Supporting Files";
@@ -171,7 +172,6 @@
 			isa = PBXGroup;
 			children = (
 				09CF6B241A21F78700A97383 /* Info.plist */,
-				C7D24C911A3E94AC00C33384 /* download_mosquitto.sh */,
 			);
 			name = "Supporting Files";
 			sourceTree = "<group>";

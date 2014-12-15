@@ -43,6 +43,34 @@ void mosquitto_context_cleanup(__MosquittoContext *mosquittoContext)
     mosquitto_destroy(mosquittoContext.mosquittoHandler);
 }
 
+void mosquitto_tls_set_bridge(NSString *cafile, NSString *capath,
+                              NSString *certfile, NSString *keyfile,
+                              __MosquittoContext *mosquitto_context)
+{
+    mosquitto_tls_set(mosquitto_context.mosquittoHandler,
+                      cafile != nil ? cafile.UTF8String : nil,
+                      capath != nil ? capath.UTF8String : nil,
+                      certfile != nil ? certfile.UTF8String : nil,
+                      keyfile != nil ? keyfile.UTF8String : nil,
+                      pw_callback);
+}
+
+void mosquitto_tls_opts_set_bridge(int cert_reqs, NSString *tls_version, NSString *ciphers,
+                                   __MosquittoContext *mosquitto_context)
+{
+    mosquitto_tls_opts_set(mosquitto_context.mosquittoHandler, cert_reqs,
+                           tls_version != nil ? tls_version.UTF8String : nil,
+                           ciphers !=  nil ? ciphers.UTF8String : nil);
+}
+
+static int pw_callback(char *buf, int size, int rwflag, void *obj)
+{
+    __MosquittoContext *mosquittoContext = (__bridge __MosquittoContext*)obj;
+    strncpy(buf, mosquittoContext.keyfile_passwd.UTF8String, size);
+    buf[size - 1] = '\0';
+    return (int)strlen(buf);
+}
+
 static void setMosquittoCallbackBridge(struct mosquitto *mosquittoHandler)
 {
     mosquitto_connect_callback_set(mosquittoHandler, on_connect);
