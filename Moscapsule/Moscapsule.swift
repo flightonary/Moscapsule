@@ -159,12 +159,23 @@ public struct MQTTPublishOpts {
 public struct MQTTServerCert {
     public let cafile: String?
     public let capath: String?
+    
+    public init(cafile: String?, capath: String?) {
+        self.cafile = cafile
+        self.capath = capath
+    }
 }
 
 public struct MQTTClientCert {
     public let certfile: String
     public let keyfile: String
     public let keyfile_passwd: String?
+    
+    public init(certfile: String, keyfile: String, keyfile_passwd: String?) {
+        self.certfile = certfile
+        self.keyfile = keyfile
+        self.keyfile_passwd = keyfile_passwd
+    }
 }
 
 public enum CertReqs: Int32 {
@@ -177,6 +188,13 @@ public struct MQTTTlsOpts {
     public let cert_reqs: CertReqs
     public let tls_version: String?
     public let ciphers: String?
+    
+    public init(tls_insecure: Bool, cert_reqs: CertReqs, tls_version: String?, ciphers: String?) {
+        self.tls_insecure = tls_insecure
+        self.cert_reqs = cert_reqs
+        self.tls_version = tls_version
+        self.ciphers = ciphers
+    }
 }
 
 public class MQTTConfig {

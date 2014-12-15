@@ -33,9 +33,15 @@ import Moscapsule
 
 class MoscapsuleTests: XCTestCase {
     
+    var initFlag = false
+    
     override func setUp() {
         super.setUp()
         // Put setup code here. This method is called before the invocation of each test method in the class.
+        if !initFlag {
+            initFlag = true
+            initialize()
+        }
     }
     
     override func tearDown() {
@@ -178,5 +184,26 @@ class MoscapsuleTests: XCTestCase {
 
         sleep(3)
         mqttClient.disconnect()
+    }
+
+    func testServerCertificate() {
+        let mqttConfig = MQTTConfig(clientId: "server_cert_test", host: "test.mosquitto.org", port: 8883, keepAlive: 60)
+        mqttConfig.onConnectCallback = { returnCode in
+            NSLog("Return Code is \(returnCode.description) (this callback is declared in swift.)")
+        }
+
+        let bundlePath : String = NSBundle(forClass: self.dynamicType).bundlePath.stringByAppendingPathComponent("cert.bundle")
+        let certFile = bundlePath.stringByAppendingPathComponent("mosquitto.org.crt")
+
+        mqttConfig.mqttServerCert = MQTTServerCert(cafile: certFile, capath: nil)
+        //mqttConfig.mqttTlsOpts = MQTTTlsOpts(tls_insecure: true, cert_reqs: .SSL_VERIFY_NONE, tls_version: nil, ciphers: nil)
+
+        let mqttClient = MQTT.invokeMqttConnection(mqttConfig)
+        sleep(25) // so long time needed...
+        XCTAssertTrue(mqttClient.isConnected)
+        mqttClient.disconnect()
+        sleep(2)
+        XCTAssertFalse(mqttClient.isConnected)
+        XCTAssertTrue(mqttClient.isFinished)
     }
 }
