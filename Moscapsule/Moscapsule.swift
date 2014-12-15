@@ -391,6 +391,11 @@ public final class MQTTClient {
         }
         objc_sync_exit(self)
     }
+
+    public var socket: Int32? {
+        let sock = mosquitto_socket(mosquittoContext.mosquittoHandler)
+        return (sock == -1 ? nil : sock)
+    }
 }
 
 private extension String {
