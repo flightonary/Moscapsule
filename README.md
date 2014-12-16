@@ -13,6 +13,13 @@ Mosquitto
 MQTT provides a lightweight method of carrying out messaging using a publish/subscribe model.
 Mosquitto is written in C language.
 
+Build
+-----
+The framework depends on [OpenSSL](https://github.com/krzyzanowskim/OpenSSL "OpenSSL"). Before building it, you must checkout the submodule.
+```
+$ git submodule update
+```
+
 Usage
 -----
 ```swift
