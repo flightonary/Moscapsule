@@ -59,7 +59,7 @@ class MoscapsuleTests: XCTestCase {
             NSLog("Reason Code is \(reasonCode.description) (this callback is declared in swift.)")
         }
         
-        let mqttClient = MQTT.invokeMqttConnection(mqttConfig)
+        let mqttClient = MQTT.newConnection(mqttConfig)
         sleep(2)
         XCTAssertTrue(mqttClient.isConnected)
         mqttClient.disconnect()
@@ -90,8 +90,8 @@ class MoscapsuleTests: XCTestCase {
             XCTAssertEqual(mqttMessage.payloadString!, payload, "Received message must be the same as published one!!")
         }
         
-        let mqttClientPub = MQTT.invokeMqttConnection(mqttConfigPub)
-        let mqttClientSub = MQTT.invokeMqttConnection(mqttConfigSub)
+        let mqttClientPub = MQTT.newConnection(mqttConfigPub)
+        let mqttClientSub = MQTT.newConnection(mqttConfigSub)
         mqttClientSub.subscribe("testTopic", qos: 2)
         sleep(2)
         mqttClientPub.publishString(payload, topic: "testTopic", qos: 2, retain: false)
@@ -118,7 +118,7 @@ class MoscapsuleTests: XCTestCase {
             unsubscribed = true
         }
         
-        let mqttClient = MQTT.invokeMqttConnection(mqttConfig)
+        let mqttClient = MQTT.newConnection(mqttConfig)
         mqttClient.subscribe("testTopic", qos: 2)
         sleep(2)
         mqttClient.unsubscribe("testTopic")
@@ -137,7 +137,7 @@ class MoscapsuleTests: XCTestCase {
             mqttConfig.onDisconnectCallback = { reasonCode in
                 disconnected = true
             }
-            let mqttClient = MQTT.invokeMqttConnection(mqttConfig)
+            let mqttClient = MQTT.newConnection(mqttConfig)
         }
         closure()
         sleep(3)
@@ -160,7 +160,7 @@ class MoscapsuleTests: XCTestCase {
         var subscribed = false
         var unsubscribed = false
 
-        let mqttClient = MQTT.invokeMqttConnection(mqttConfig)
+        let mqttClient = MQTT.newConnection(mqttConfig)
         mqttClient.publishString("msg", topic: "topic", qos: 2, retain: false) { mosqReturn, messageId in
             published = true
             NSLog("publish completion: mosq_return=\(mosqReturn.rawValue) messageId=\(messageId)")
@@ -198,7 +198,7 @@ class MoscapsuleTests: XCTestCase {
         mqttConfig.mqttServerCert = MQTTServerCert(cafile: certFile, capath: nil)
         //mqttConfig.mqttTlsOpts = MQTTTlsOpts(tls_insecure: true, cert_reqs: .SSL_VERIFY_NONE, tls_version: nil, ciphers: nil)
 
-        let mqttClient = MQTT.invokeMqttConnection(mqttConfig)
+        let mqttClient = MQTT.newConnection(mqttConfig)
         sleep(25) // so long time needed...
         XCTAssertTrue(mqttClient.isConnected)
         mqttClient.disconnect()
