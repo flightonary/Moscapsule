@@ -197,6 +197,19 @@ public struct MQTTTlsOpts {
     }
 }
 
+public struct MQTTPsk {
+    public let psk: String
+    public let identity: String
+    public let ciphers: String?
+    
+    public init(psk: String, identity: String, ciphers: String?) {
+        self.psk = psk
+        self.identity = identity
+        self.ciphers = ciphers
+    }
+}
+
+
 public class MQTTConfig {
     public let clientId: String
     public let host: String
@@ -210,6 +223,7 @@ public class MQTTConfig {
     public var mqttServerCert: MQTTServerCert?
     public var mqttClientCert: MQTTClientCert?
     public var mqttTlsOpts: MQTTTlsOpts?
+    public var mqttPsk: MQTTPsk?
     
     public var onConnectCallback: ((returnCode: ReturnCode) -> ())?
     public var onDisconnectCallback: ((reasonCode: ReasonCode) -> ())!
@@ -314,6 +328,11 @@ public final class MQTT {
         if let mqttTlsOpts = mqttConfig.mqttTlsOpts {
             mosquitto_tls_insecure_set(mosquittoContext.mosquittoHandler, mqttTlsOpts.tls_insecure)
             mosquitto_tls_opts_set_bridge(mqttTlsOpts.cert_reqs.rawValue, mqttTlsOpts.tls_version, mqttTlsOpts.ciphers, mosquittoContext)
+        }
+
+        // set PSK
+        if let mqttPsk = mqttConfig.mqttPsk {
+            mosquitto_tls_psk_set_bridge(mqttPsk.psk, mqttPsk.identity, mqttPsk.ciphers, mosquittoContext)
         }
 
         // start MQTTClient

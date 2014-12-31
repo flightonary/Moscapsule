@@ -42,5 +42,6 @@ void mosquitto_tls_set_bridge(NSString *cafile, NSString *capath,
                               __MosquittoContext *mosquitto_context);
 void mosquitto_tls_opts_set_bridge(int cert_reqs, NSString *tls_version, NSString *ciphers,
                                    __MosquittoContext *mosquitto_context);
-
+void mosquitto_tls_psk_set_bridge(NSString *psk, NSString *identity, NSString *ciphers,
+                                  __MosquittoContext *mosquitto_context);
 #endif
