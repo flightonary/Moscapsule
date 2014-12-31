@@ -266,7 +266,7 @@ public final class MQTTMessage {
 }
 
 public final class MQTT {
-    public class func invokeMqttConnection(mqttConfig: MQTTConfig) -> MQTTClient {
+    public class func newConnection(mqttConfig: MQTTConfig) -> MQTTClient {
         let mosquittoContext = __MosquittoContext()
         mosquittoContext.onConnectCallback = onConnectAdapter(mqttConfig.onConnectCallback)
         mosquittoContext.onDisconnectCallback = onDisconnectAdapter(mqttConfig.onDisconnectCallback)
