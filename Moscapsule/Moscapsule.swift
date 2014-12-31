@@ -30,10 +30,10 @@ import Foundation
 
 public enum ReturnCode: Int {
     case Success = 0
-    case Unacceptable_Protocol_Version
-    case Identifier_Rejected
-    case Broker_Unavailable
-    case Unknown
+    case Unacceptable_Protocol_Version = 1
+    case Identifier_Rejected = 2
+    case Broker_Unavailable = 3
+    case Unknown = 256
 
     public var description: String {
         switch self {
@@ -53,7 +53,7 @@ public enum ReturnCode: Int {
 
 public enum ReasonCode: Int {
     case Disconnect_Requested = 0
-    case Unexpected
+    case Unexpected = 1
 
     public var description: String {
         switch self {
@@ -224,8 +224,8 @@ public class MQTTConfig {
     public var mqttClientCert: MQTTClientCert?
     public var mqttTlsOpts: MQTTTlsOpts?
     public var mqttPsk: MQTTPsk?
-    
-    public var onConnectCallback: ((returnCode: ReturnCode) -> ())?
+
+    public var onConnectCallback: ((returnCode: ReturnCode) -> ())!
     public var onDisconnectCallback: ((reasonCode: ReasonCode) -> ())!
     public var onPublishCallback: ((messageId: Int) -> ())!
     public var onMessageCallback: ((mqttMessage: MQTTMessage) -> ())!
@@ -265,7 +265,7 @@ public final class MQTTMessage {
     public let payload: NSData
     public let qos: Int32
     public let retain: Bool
-    
+
     public var payloadString: String? {
         return NSString(data: payload, encoding: NSUTF8StringEncoding)
     }
@@ -294,10 +294,10 @@ public final class MQTT {
 
         // set MQTT Reconnection Options
         mosquitto_reconnect_delay_set(mosquittoContext.mosquittoHandler,
-            mqttConfig.mqttReconnOpts.reconnect_delay_s,
-            mqttConfig.mqttReconnOpts.reconnect_delay_max_s,
-            mqttConfig.mqttReconnOpts.reconnect_exponential_backoff)
-        
+                                      mqttConfig.mqttReconnOpts.reconnect_delay_s,
+                                      mqttConfig.mqttReconnOpts.reconnect_delay_max_s,
+                                      mqttConfig.mqttReconnOpts.reconnect_exponential_backoff)
+
         // set MQTT Will Options
         if let mqttWillOpts = mqttConfig.mqttWillOpts {
             mosquitto_will_set(mosquittoContext.mosquittoHandler, mqttWillOpts.topic.cCharArray,
@@ -340,10 +340,9 @@ public final class MQTT {
         let host = mqttConfig.host
         let port = mqttConfig.port
         let keepAlive = mqttConfig.keepAlive
-        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
+        mqttClient.serialQueue.addOperationWithBlock {
             mosquitto_connect(mosquittoContext.mosquittoHandler, host.cCharArray, port, keepAlive)
             mosquitto_loop_start(mosquittoContext.mosquittoHandler)
-            mqttClient.serialQueue.suspended = false
         }
         
         return mqttClient
@@ -351,15 +350,13 @@ public final class MQTT {
 
     private class func onConnectAdapter(callback: ((ReturnCode) -> ())!) -> ((returnCode: Int) -> ())! {
         return callback == nil ? nil : { (rawReturnCode: Int) in
-            let returnCode = rawReturnCode < ReturnCode.Unknown.rawValue ? ReturnCode(rawValue: rawReturnCode) : ReturnCode.Unknown
-            callback(returnCode!)
+            callback(ReturnCode(rawValue: rawReturnCode) ?? ReturnCode.Unknown)
         }
     }
 
     private class func onDisconnectAdapter(callback: ((ReasonCode) -> ())!) -> ((reasonCode: Int) -> ())! {
         return callback == nil ? nil : { (rawReasonCode: Int) in
-            let reasonCode = rawReasonCode < ReasonCode.Unexpected.rawValue ? ReasonCode(rawValue: rawReasonCode) : ReasonCode.Unexpected
-            callback(reasonCode!)
+            callback(ReasonCode(rawValue: rawReasonCode) ?? ReasonCode.Unexpected)
         }
     }
 
@@ -392,7 +389,6 @@ public final class MQTTClient {
         let queue = NSOperationQueue()
         queue.name = "MQTT Client Operation Queue"
         queue.maxConcurrentOperationCount = 1
-        queue.suspended = true
         return queue
     }()
     public var isConnected: Bool {
@@ -413,7 +409,7 @@ public final class MQTTClient {
                 var messageId: Int32 = 0
                 let mosqReturn = mosquitto_publish(self.mosquittoContext.mosquittoHandler, &messageId, topic.cCharArray,
                     Int32(payload.length), payload.bytes, qos, retain)
-                requestCompletion?(MosqResult(rawValue: Int(mosqReturn))!, Int(messageId))
+                requestCompletion?(MosqResult(rawValue: Int(mosqReturn)) ?? MosqResult.MOSQ_UNKNOWN, Int(messageId))
             }
         }
     }
@@ -429,7 +425,7 @@ public final class MQTTClient {
             if (!self.isFinished) {
                 var messageId: Int32 = 0
                 let mosqReturn = mosquitto_subscribe(self.mosquittoContext.mosquittoHandler, &messageId, topic.cCharArray, qos)
-                requestCompletion?(MosqResult(rawValue: Int(mosqReturn))!, Int(messageId))
+                requestCompletion?(MosqResult(rawValue: Int(mosqReturn)) ?? MosqResult.MOSQ_UNKNOWN, Int(messageId))
             }
         }
     }
@@ -439,7 +435,7 @@ public final class MQTTClient {
             if (!self.isFinished) {
                 var messageId: Int32 = 0
                 let mosqReturn = mosquitto_unsubscribe(self.mosquittoContext.mosquittoHandler, &messageId, topic.cCharArray)
-                requestCompletion?(MosqResult(rawValue: Int(mosqReturn))!, Int(messageId))
+                requestCompletion?(MosqResult(rawValue: Int(mosqReturn)) ?? MosqResult.MOSQ_UNKNOWN, Int(messageId))
             }
         }
     }

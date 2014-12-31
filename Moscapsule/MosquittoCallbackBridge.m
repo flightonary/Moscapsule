@@ -42,7 +42,7 @@ static void on_subscribe(struct mosquitto *, void *, int, int, const int *);
 static void on_unsubscribe(struct mosquitto *, void *, int);
 static void on_log(struct mosquitto *, void *, int, const char *);
 static const char *LogLevelString(int);
-static void moq_log_d(__MosquittoContext *, enum mosq_err_t, NSString *);
+static void log_d(__MosquittoContext *, enum mosq_err_t, NSString *);
 
 void mosquitto_context_setup(const char *clientId, bool cleanSession, __MosquittoContext *mosquittoContext)
 {
@@ -56,9 +56,7 @@ void mosquitto_context_cleanup(__MosquittoContext *mosquittoContext)
     mosquitto_destroy(mosquittoContext.mosquittoHandler);
 }
 
-void mosquitto_tls_set_bridge(NSString *cafile, NSString *capath,
-                              NSString *certfile, NSString *keyfile,
-                              __MosquittoContext *mosquitto_context)
+void mosquitto_tls_set_bridge(NSString *cafile, NSString *capath, NSString *certfile, NSString *keyfile, __MosquittoContext *mosquitto_context)
 {
     int ret = mosquitto_tls_set(mosquitto_context.mosquittoHandler,
                                 cafile != nil ? cafile.UTF8String : nil,
@@ -67,26 +65,24 @@ void mosquitto_tls_set_bridge(NSString *cafile, NSString *capath,
                                 keyfile != nil ? keyfile.UTF8String : nil,
                                 pw_callback);
 
-    moq_log_d(mosquitto_context, ret, [NSString stringWithFormat:@"mosquitto_tls_set error (code: %d)", ret]);
+    log_d(mosquitto_context, ret, [NSString stringWithFormat:@"mosquitto_tls_set error (code: %d)", ret]);
 }
 
-void mosquitto_tls_opts_set_bridge(int cert_reqs, NSString *tls_version, NSString *ciphers,
-                                   __MosquittoContext *mosquitto_context)
+void mosquitto_tls_opts_set_bridge(int cert_reqs, NSString *tls_version, NSString *ciphers, __MosquittoContext *mosquitto_context)
 {
     int ret = mosquitto_tls_opts_set(mosquitto_context.mosquittoHandler, cert_reqs,
                                      tls_version != nil ? tls_version.UTF8String : nil,
                                      ciphers !=  nil ? ciphers.UTF8String : nil);
 
-    moq_log_d(mosquitto_context, ret, [NSString stringWithFormat:@"mosquitto_tls_opts_set error (code: %d)", ret]);
+    log_d(mosquitto_context, ret, [NSString stringWithFormat:@"mosquitto_tls_opts_set error (code: %d)", ret]);
 }
 
-void mosquitto_tls_psk_set_bridge(NSString *psk, NSString *identity, NSString *ciphers,
-                                  __MosquittoContext *mosquitto_context)
+void mosquitto_tls_psk_set_bridge(NSString *psk, NSString *identity, NSString *ciphers, __MosquittoContext *mosquitto_context)
 {
     int ret = mosquitto_tls_psk_set(mosquitto_context.mosquittoHandler, psk.UTF8String, identity.UTF8String,
                                     ciphers !=  nil ? ciphers.UTF8String : nil);
 
-    moq_log_d(mosquitto_context, ret, [NSString stringWithFormat:@"mosquitto_tls_psk_set error (code: %d)", ret]);
+    log_d(mosquitto_context, ret, [NSString stringWithFormat:@"mosquitto_tls_psk_set error (code: %d)", ret]);
 }
 
 static int pw_callback(char *buf, int size, int rwflag, void *obj)
@@ -184,7 +180,7 @@ static const char *LogLevelString(int logLevel)
     return "       ";
 }
 
-static void moq_log_d(__MosquittoContext *mosquitto_context, enum mosq_err_t mosq_ret, NSString *log)
+static void log_d(__MosquittoContext *mosquitto_context, enum mosq_err_t mosq_ret, NSString *log)
 {
     if(mosq_ret != MOSQ_ERR_SUCCESS) {
         on_log(mosquitto_context.mosquittoHandler, (__bridge void *)(mosquitto_context), MOSQ_LOG_DEBUG, [log UTF8String]);
