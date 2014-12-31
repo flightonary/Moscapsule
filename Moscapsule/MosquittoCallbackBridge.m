@@ -56,9 +56,7 @@ void mosquitto_context_cleanup(__MosquittoContext *mosquittoContext)
     mosquitto_destroy(mosquittoContext.mosquittoHandler);
 }
 
-void mosquitto_tls_set_bridge(NSString *cafile, NSString *capath,
-                              NSString *certfile, NSString *keyfile,
-                              __MosquittoContext *mosquitto_context)
+void mosquitto_tls_set_bridge(NSString *cafile, NSString *capath, NSString *certfile, NSString *keyfile, __MosquittoContext *mosquitto_context)
 {
     int ret = mosquitto_tls_set(mosquitto_context.mosquittoHandler,
                                 cafile != nil ? cafile.UTF8String : nil,
@@ -70,14 +68,21 @@ void mosquitto_tls_set_bridge(NSString *cafile, NSString *capath,
     log_d(mosquitto_context, ret, [NSString stringWithFormat:@"mosquitto_tls_set error (code: %d)", ret]);
 }
 
-void mosquitto_tls_opts_set_bridge(int cert_reqs, NSString *tls_version, NSString *ciphers,
-                                   __MosquittoContext *mosquitto_context)
+void mosquitto_tls_opts_set_bridge(int cert_reqs, NSString *tls_version, NSString *ciphers, __MosquittoContext *mosquitto_context)
 {
     int ret = mosquitto_tls_opts_set(mosquitto_context.mosquittoHandler, cert_reqs,
                                      tls_version != nil ? tls_version.UTF8String : nil,
                                      ciphers !=  nil ? ciphers.UTF8String : nil);
 
     log_d(mosquitto_context, ret, [NSString stringWithFormat:@"mosquitto_tls_opts_set error (code: %d)", ret]);
+}
+
+void mosquitto_tls_psk_set_bridge(NSString *psk, NSString *identity, NSString *ciphers, __MosquittoContext *mosquitto_context)
+{
+    int ret = mosquitto_tls_psk_set(mosquitto_context.mosquittoHandler, psk.UTF8String, identity.UTF8String,
+                                    ciphers !=  nil ? ciphers.UTF8String : nil);
+
+    log_d(mosquitto_context, ret, [NSString stringWithFormat:@"mosquitto_tls_psk_set error (code: %d)", ret]);
 }
 
 static int pw_callback(char *buf, int size, int rwflag, void *obj)
