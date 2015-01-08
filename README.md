@@ -35,7 +35,7 @@ mqttConfig.onMessageCallback = { mqttMessage in
 }
 
 // create new MQTT Connection
-let mqttClient = MQTT.invokeMqttConnection(mqttConfig)
+let mqttClient = MQTT.newConnection(mqttConfig)
 
 // publish and subscribe
 mqttClient.publishString("message", topic: "publish/topic", qos: 2, retain: false)
