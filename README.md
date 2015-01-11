@@ -23,6 +23,7 @@ $ git submodule update
 
 Usage
 -----
+Here is a basic sample.
 ```swift
 import Moscapsule
 
@@ -44,6 +45,25 @@ mqttClient.subscribe("subscribe/topic", qos: 2)
 
 // disconnect
 mqttClient.disconnect()
+```
+
+The framework supports TLS_PSK, Server and/or Client certification.  
+Here is a server certificate sample.
+```swift
+import Moscapsule
+
+// Note that you must initialize framework only once after launch application
+// in case that it uses SSL/TLS functions.
+moscapsule_init()
+
+let mqttConfig = MQTTConfig(clientId: "server_cert_test", host: "test.mosquitto.org", port: 8883, keepAlive: 60)
+
+let bundlePath = NSBundle(forClass: self.dynamicType).bundlePath.stringByAppendingPathComponent("cert.bundle")
+let certFile = bundlePath.stringByAppendingPathComponent("mosquitto.org.crt")
+
+mqttConfig.mqttServerCert = MQTTServerCert(cafile: certFile, capath: nil)
+
+let mqttClient = MQTT.newConnection(mqttConfig)
 ```
 
 License
