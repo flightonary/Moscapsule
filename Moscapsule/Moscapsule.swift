@@ -91,11 +91,11 @@ public struct Qos {
     public static let Exactly_Once: Int32  = 2  // Assured delivery, i.e. =1
 }
 
-public func initialize() {
+public func moscapsule_init() {
     mosquitto_lib_init()
 }
 
-public func cleanup() {
+public func moscapsule_cleanup() {
     mosquitto_lib_cleanup()
 }
 
