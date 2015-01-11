@@ -17,6 +17,7 @@ Build
 -----
 The framework depends on [OpenSSL](https://github.com/krzyzanowskim/OpenSSL "OpenSSL"). Before building it, you must checkout the submodule.
 ```
+$ git submodule init
 $ git submodule update
 ```
 
