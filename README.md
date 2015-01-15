@@ -47,7 +47,7 @@ mqttClient.disconnect()
 ```
 
 The framework supports TLS_PSK, Server and/or Client certification.  
-Here is a server certificate sample.
+Here is a sample for server certificate.
 ```swift
 import Moscapsule
 
