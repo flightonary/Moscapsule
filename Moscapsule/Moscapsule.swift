@@ -247,7 +247,7 @@ public class MQTTConfig {
 
 @objc(__MosquittoContext)
 public final class __MosquittoContext {
-    public var mosquittoHandler: COpaquePointer = COpaquePointer.null()
+    public var mosquittoHandler: COpaquePointer = nil
     public var isConnected: Bool = false
     public var onConnectCallback: ((returnCode: Int) -> ())!
     public var onDisconnectCallback: ((reasonCode: Int) -> ())!
@@ -267,7 +267,7 @@ public final class MQTTMessage {
     public let retain: Bool
 
     public var payloadString: String? {
-        return NSString(data: payload, encoding: NSUTF8StringEncoding)
+        return NSString(data: payload, encoding: NSUTF8StringEncoding) as? String
     }
 
     internal init(messageId: Int, topic: String, payload: NSData, qos: Int32, retain: Bool) {
@@ -416,7 +416,7 @@ public final class MQTTClient {
 
     public func publishString(payload: String, topic: String, qos: Int32, retain: Bool, requestCompletion: ((MosqResult, Int) -> ())? = nil) {
         if let payloadData = (payload as NSString).dataUsingEncoding(NSUTF8StringEncoding) {
-            publish(payloadData, topic: topic, qos: qos, retain: retain, requestCompletion)
+            publish(payloadData, topic: topic, qos: qos, retain: retain, requestCompletion: requestCompletion)
         }
     }
 
