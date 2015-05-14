@@ -1,10 +1,8 @@
 Moscapsule
 ==========
 
-MQTT Client for iOS written in Swift.
-
-This framework is implemented as a wrapper of Mosquitto library.
-
+MQTT Client for iOS written in Swift.  
+This framework is implemented as a wrapper of Mosquitto library.  
 It uses Mosquitto version 1.3.5.
 
 Mosquitto
@@ -13,12 +11,43 @@ Mosquitto
 MQTT provides a lightweight method of carrying out messaging using a publish/subscribe model.
 Mosquitto is written in C language.
 
-Build
------
-The framework depends on [OpenSSL](https://github.com/krzyzanowskim/OpenSSL "OpenSSL"). Before building it, you must checkout the submodule.
+Installation
+------------
+
+### CocoaPods
+[CocoaPods](http://cocoapods.org) is a Cocoa project manager. It is a easy way for to install framework, so I recommend to using it.  
+Specify it in your podfile;
 ```
-$ git submodule update --init
+use_frameworks!
+
+pod 'Moscapsule', '~> 0.4'
+pod 'OpenSSL-Universal', '~> 1.0.1.l'
 ```
+
+and then run;
+```
+$ pod install
+```
+
+### Manual Installation
+If you don't want to use CocoaPods, you can install manually.
+
+a) Check out Moscapsule.  
+```
+$ git clone https://github.com/flightonary/Moscapsule.git
+```
+b) The framework depends on [OpenSSL](https://github.com/krzyzanowskim/OpenSSL "OpenSSL"). Before building it, you must checkout the submodule.
+```
+$ git submodule update --init  
+```
+c) Create a Xcode project and Workspace if you don't have these.  
+d) Open workspace and drag & drop your project and Moscapsule.xcodeproj into Navigation.  
+e) Drag & drop Moscapsule.xcodeproj under your project tree in Navitaion.  
+f) Select your project and `Build Phases`.  
+g) Add Moscapsule in `Target Dependencies` and `Link Binary With Libraries` using `+` button.  
+
+![Moscapsule Manual Installation](https://flightonary.github.io/img/mosq_install.png)
+
 
 Usage
 -----
