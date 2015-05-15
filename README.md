@@ -2,7 +2,7 @@ Moscapsule
 ==========
 
 MQTT Client for iOS written in Swift.  
-This framework is implemented as a wrapper of Mosquitto library.  
+This framework is implemented as a wrapper of Mosquitto library and covers almost all mosquitto features.  
 It uses Mosquitto version 1.3.5.
 
 Mosquitto

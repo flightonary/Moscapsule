@@ -13,7 +13,7 @@ Pod::Spec.new do |s|
   s.description  = <<-DESC
                    MQTT Client for iOS written in Swift.
                    This framework is implemented as a wrapper of Mosquitto library
-                   and cover almost all mosquitto function.
+                   and covers almost all mosquitto features.
                    DESC
   s.homepage     = "https://github.com/flightonary/Moscapsule"
 
@@ -88,10 +88,11 @@ Pod::Spec.new do |s|
 
   s.requires_arc = true
   s.xcconfig     = {
-                     'LIBRARY_SEARCH_PATHS' => '"$(PODS_ROOT)/OpenSSL-Universal/lib-ios"', # workaround
-                     'OTHER_CFLAGS' => '-DWITH_THREADING -DWITH_TLS -DWITH_TLS_PSK',
-                   }
-# FIXME: Don't work with dependency.
-#  s.dependency      "OpenSSL-Universal", "~> 1.0.1.l"
+    'OTHER_CFLAGS' => '-DWITH_THREADING -DWITH_TLS -DWITH_TLS_PSK',
+    'LIBRARY_SEARCH_PATHS' => '"$(PODS_ROOT)/OpenSSL-Universal/lib-ios"' # workaround
+  }
+
+  # FIXME: Don't work with dependency.
+  #  s.dependency      "OpenSSL-Universal", "~> 1.0.1.l"
 
 end
