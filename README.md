@@ -20,7 +20,7 @@ Specify it in your podfile;
 ```
 use_frameworks!
 
-pod 'Moscapsule', '~> 0.4'
+pod 'Moscapsule', :git => 'https://github.com/flightonary/Moscapsule.git'
 pod 'OpenSSL-Universal', '~> 1.0.1.l'
 ```
 
@@ -28,6 +28,11 @@ and then run;
 ```
 $ pod install
 ```
+
+In order to import the framework in tests, you should select configuration files.  
+a) Select your project and `info`.  
+b) Change configuration files from none to Pods.debug/release.  
+![Configuration File](https://flightonary.github.io/img/inst_with_cocoapods.png)
 
 ### Manual Installation
 If you don't want to use CocoaPods, you can install manually.
