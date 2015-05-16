@@ -29,6 +29,11 @@ and then run;
 $ pod install
 ```
 
+In order to import the framework in tests, you should select configuration files.  
+a) Select your project and `info`.  
+b) Change configuration files from none to Pods.debug/release.  
+![Configuration File](https://flightonary.github.io/img/inst_with_cocoapods.png)
+
 ### Manual Installation
 If you don't want to use CocoaPods, you can install manually.
 
