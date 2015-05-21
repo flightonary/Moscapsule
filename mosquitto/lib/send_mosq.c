@@ -1,48 +1,35 @@
 /*
-Copyright (c) 2009-2013 Roger Light <roger@atchoo.org>
-All rights reserved.
+Copyright (c) 2009-2014 Roger Light <roger@atchoo.org>
 
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-
-1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
-3. Neither the name of mosquitto nor the names of its
-   contributors may be used to endorse or promote products derived from
-   this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
-LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
+All rights reserved. This program and the accompanying materials
+are made available under the terms of the Eclipse Public License v1.0
+and Eclipse Distribution License v1.0 which accompany this distribution.
+ 
+The Eclipse Public License is available at
+   http://www.eclipse.org/legal/epl-v10.html
+and the Eclipse Distribution License is available at
+  http://www.eclipse.org/org/documents/edl-v10.php.
+ 
+Contributors:
+   Roger Light - initial implementation and documentation.
 */
 
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
 
-#include "mosquitto.h"
-#include "mosquitto_internal.h"
-#include "logging_mosq.h"
-#include "mqtt3_protocol.h"
-#include "memory_mosq.h"
-#include "net_mosq.h"
-#include "send_mosq.h"
-#include "time_mosq.h"
-#include "util_mosq.h"
+#include <mosquitto.h>
+#include <mosquitto_internal.h>
+#include <logging_mosq.h>
+#include <mqtt3_protocol.h>
+#include <memory_mosq.h>
+#include <net_mosq.h>
+#include <send_mosq.h>
+#include <time_mosq.h>
+#include <util_mosq.h>
 
 #ifdef WITH_BROKER
-#include "mosquitto_broker.h"
+#include <mosquitto_broker.h>
 #  ifdef WITH_SYS_TREE
 extern uint64_t g_pub_bytes_sent;
 #  endif
@@ -110,7 +97,12 @@ int _mosquitto_send_publish(struct mosquitto *mosq, uint16_t mid, const char *to
 	assert(mosq);
 	assert(topic);
 
+#if defined(WITH_BROKER) && defined(WITH_WEBSOCKETS)
+	if(mosq->sock == INVALID_SOCKET && !mosq->wsi) return MOSQ_ERR_NO_CONN;
+#else
 	if(mosq->sock == INVALID_SOCKET) return MOSQ_ERR_NO_CONN;
+#endif
+
 #ifdef WITH_BROKER
 	if(mosq->listener && mosq->listener->mount_point){
 		len = strlen(mosq->listener->mount_point);
@@ -151,12 +143,13 @@ int _mosquitto_send_publish(struct mosquitto *mosq, uint16_t mid, const char *to
 					if(cur_topic->remote_prefix){
 						/* This prefix needs adding. */
 						len = strlen(mapped_topic) + strlen(cur_topic->remote_prefix)+1;
-						topic_temp = _mosquitto_calloc(len+1, sizeof(char));
+						topic_temp = _mosquitto_malloc(len+1);
 						if(!topic_temp){
 							_mosquitto_free(mapped_topic);
 							return MOSQ_ERR_NOMEM;
 						}
 						snprintf(topic_temp, len, "%s%s", cur_topic->remote_prefix, mapped_topic);
+						topic_temp[len] = '\0';
 						_mosquitto_free(mapped_topic);
 						mapped_topic = topic_temp;
 					}
@@ -193,14 +186,14 @@ int _mosquitto_send_pubrec(struct mosquitto *mosq, uint16_t mid)
 	return _mosquitto_send_command_with_mid(mosq, PUBREC, mid, false);
 }
 
-int _mosquitto_send_pubrel(struct mosquitto *mosq, uint16_t mid, bool dup)
+int _mosquitto_send_pubrel(struct mosquitto *mosq, uint16_t mid)
 {
 #ifdef WITH_BROKER
 	if(mosq) _mosquitto_log_printf(NULL, MOSQ_LOG_DEBUG, "Sending PUBREL to %s (Mid: %d)", mosq->id, mid);
 #else
 	if(mosq) _mosquitto_log_printf(mosq, MOSQ_LOG_DEBUG, "Client %s sending PUBREL (Mid: %d)", mosq->id, mid);
 #endif
-	return _mosquitto_send_command_with_mid(mosq, PUBREL|2, mid, dup);
+	return _mosquitto_send_command_with_mid(mosq, PUBREL|2, mid, false);
 }
 
 /* For PUBACK, PUBCOMP, PUBREC, and PUBREL */

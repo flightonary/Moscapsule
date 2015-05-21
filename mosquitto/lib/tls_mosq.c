@@ -1,30 +1,17 @@
 /*
-Copyright (c) 2013 Roger Light <roger@atchoo.org>
-All rights reserved.
+Copyright (c) 2013,2014 Roger Light <roger@atchoo.org>
 
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-
-1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
-3. Neither the name of mosquitto nor the names of its
-   contributors may be used to endorse or promote products derived from
-   this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
-LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
+All rights reserved. This program and the accompanying materials
+are made available under the terms of the Eclipse Public License v1.0
+and Eclipse Distribution License v1.0 which accompany this distribution.
+ 
+The Eclipse Public License is available at
+   http://www.eclipse.org/legal/epl-v10.html
+and the Eclipse Distribution License is available at
+  http://www.eclipse.org/org/documents/edl-v10.php.
+ 
+Contributors:
+   Roger Light - initial implementation and documentation.
 */
 
 #ifdef WITH_TLS
@@ -82,6 +69,33 @@ int _mosquitto_server_certificate_verify(int preverify_ok, X509_STORE_CTX *ctx)
 	}
 }
 
+int mosquitto__cmp_hostname_wildcard(char *certname, const char *hostname)
+{
+	int i;
+	int len;
+
+	if(!certname || !hostname){
+		return 1;
+	}
+
+	if(certname[0] == '*'){
+		if(certname[1] != '.'){
+			return 1;
+		}
+		certname += 2;
+		len = strlen(hostname);
+		for(i=0; i<len-1; i++){
+			if(hostname[i] == '.'){
+				hostname += i+1;
+				break;
+			}
+		}
+		return strcasecmp(certname, hostname);
+	}else{
+		return strcasecmp(certname, hostname);
+	}
+}
+
 /* This code is based heavily on the example provided in "Secure Programming
  * Cookbook for C and C++".
  */
@@ -113,7 +127,7 @@ int _mosquitto_verify_certificate_hostname(X509 *cert, const char *hostname)
 			nval = sk_GENERAL_NAME_value(san, i);
 			if(nval->type == GEN_DNS){
 				data = ASN1_STRING_data(nval->d.dNSName);
-				if(data && !strcasecmp((char *)data, hostname)){
+				if(data && !mosquitto__cmp_hostname_wildcard((char *)data, hostname)){
 					return 1;
 				}
 				have_san_dns = true;
@@ -138,7 +152,7 @@ int _mosquitto_verify_certificate_hostname(X509 *cert, const char *hostname)
 	subj = X509_get_subject_name(cert);
 	if(X509_NAME_get_text_by_NID(subj, NID_commonName, name, sizeof(name)) > 0){
 		name[sizeof(name) - 1] = '\0';
-		if (!strcasecmp(name, hostname)) return 1;
+		if (!mosquitto__cmp_hostname_wildcard(name, hostname)) return 1;
 	}
 	return 0;
 }

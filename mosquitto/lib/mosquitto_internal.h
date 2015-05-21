@@ -1,43 +1,32 @@
 /*
-Copyright (c) 2010,2011,2013 Roger Light <roger@atchoo.org>
-All rights reserved.
+Copyright (c) 2010-2014 Roger Light <roger@atchoo.org>
 
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-
-1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
-3. Neither the name of mosquitto nor the names of its
-   contributors may be used to endorse or promote products derived from
-   this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
-LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
+All rights reserved. This program and the accompanying materials
+are made available under the terms of the Eclipse Public License v1.0
+and Eclipse Distribution License v1.0 which accompany this distribution.
+ 
+The Eclipse Public License is available at
+   http://www.eclipse.org/legal/epl-v10.html
+and the Eclipse Distribution License is available at
+  http://www.eclipse.org/org/documents/edl-v10.php.
+ 
+Contributors:
+   Roger Light - initial implementation and documentation.
 */
 
 #ifndef _MOSQUITTO_INTERNAL_H_
 #define _MOSQUITTO_INTERNAL_H_
 
-#include "config.h"
+#include <config.h>
 
 #ifdef WIN32
 #  include <winsock2.h>
 #endif
 
 #ifdef WITH_TLS
-#include <openssl/ssl.h>
+#  include <openssl/ssl.h>
+#else
+#  include <time.h>
 #endif
 #include <stdlib.h>
 
@@ -67,7 +56,14 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "mosquitto.h"
 #include "time_mosq.h"
 #ifdef WITH_BROKER
+#  include "uthash.h"
 struct mosquitto_client_msg;
+#endif
+
+#ifdef WIN32
+typedef SOCKET mosq_sock_t;
+#else
+typedef int mosq_sock_t;
 #endif
 
 enum mosquitto_msg_direction {
@@ -96,7 +92,17 @@ enum mosquitto_client_state {
 	mosq_cs_disconnecting = 2,
 	mosq_cs_connect_async = 3,
 	mosq_cs_connect_pending = 4,
-	mosq_cs_connect_srv = 5
+	mosq_cs_connect_srv = 5,
+	mosq_cs_disconnect_ws = 6,
+	mosq_cs_disconnected = 7,
+	mosq_cs_socks5_new = 8,
+	mosq_cs_socks5_start = 9,
+	mosq_cs_socks5_request = 10,
+	mosq_cs_socks5_reply = 11,
+	mosq_cs_socks5_auth_ok = 12,
+	mosq_cs_socks5_userpass_reply = 13,
+	mosq_cs_socks5_send_userpass = 14,
+	mosq_cs_expiring = 15,
 };
 
 enum _mosquitto_protocol {
@@ -114,17 +120,16 @@ enum _mosquitto_transport {
 };
 
 struct _mosquitto_packet{
-	uint8_t command;
-	uint8_t have_remaining;
-	uint8_t remaining_count;
-	uint16_t mid;
+	uint8_t *payload;
+	struct _mosquitto_packet *next;
 	uint32_t remaining_mult;
 	uint32_t remaining_length;
 	uint32_t packet_length;
 	uint32_t to_process;
 	uint32_t pos;
-	uint8_t *payload;
-	struct _mosquitto_packet *next;
+	uint16_t mid;
+	uint8_t command;
+	int8_t remaining_count;
 };
 
 struct mosquitto_message_all{
@@ -137,16 +142,9 @@ struct mosquitto_message_all{
 };
 
 struct mosquitto {
-#ifndef WIN32
-	int sock;
-#  ifndef WITH_BROKER
-	int sockpairR, sockpairW;
-#  endif
-#else
-	SOCKET sock;
-#  ifndef WITH_BROKER
-	SOCKET sockpairR, sockpairW;
-#  endif
+	mosq_sock_t sock;
+#ifndef WITH_BROKER
+	mosq_sock_t sockpairR, sockpairW;
 #endif
 	enum _mosquitto_protocol protocol;
 	char *address;
@@ -154,12 +152,11 @@ struct mosquitto {
 	char *username;
 	char *password;
 	uint16_t keepalive;
-	bool clean_session;
+	uint16_t last_mid;
 	enum mosquitto_client_state state;
 	time_t last_msg_in;
 	time_t last_msg_out;
 	time_t ping_t;
-	uint16_t last_mid;
 	struct _mosquitto_packet in_packet;
 	struct _mosquitto_packet *current_out_packet;
 	struct _mosquitto_packet *out_packet;
@@ -172,14 +169,15 @@ struct mosquitto {
 	char *tls_certfile;
 	char *tls_keyfile;
 	int (*tls_pw_callback)(char *buf, int size, int rwflag, void *userdata);
-	int tls_cert_reqs;
 	char *tls_version;
 	char *tls_ciphers;
 	char *tls_psk;
 	char *tls_psk_identity;
+	int tls_cert_reqs;
 	bool tls_insecure;
 #endif
 	bool want_write;
+	bool want_connect;
 #if defined(WITH_THREADING) && !defined(WITH_BROKER)
 	pthread_mutex_t callback_mutex;
 	pthread_mutex_t log_callback_mutex;
@@ -189,9 +187,12 @@ struct mosquitto {
 	pthread_mutex_t state_mutex;
 	pthread_mutex_t in_message_mutex;
 	pthread_mutex_t out_message_mutex;
+	pthread_mutex_t mid_mutex;
 	pthread_t thread_id;
 #endif
+	bool clean_session;
 #ifdef WITH_BROKER
+	bool is_dropping;
 	bool is_bridge;
 	struct _mqtt3_bridge *bridge;
 	struct mosquitto_client_msg *msgs;
@@ -201,11 +202,21 @@ struct mosquitto {
 	struct _mosquitto_acl_user *acl_list;
 	struct _mqtt3_listener *listener;
 	time_t disconnect_t;
-	int pollfd_index;
-	int db_index;
 	struct _mosquitto_packet *out_packet_last;
-	bool is_dropping;
+	struct _mosquitto_subhier **subs;
+	int sub_count;
+	int pollfd_index;
+#  ifdef WITH_WEBSOCKETS
+	struct libwebsocket_context *ws_context;
+	struct libwebsocket *wsi;
+#  endif
 #else
+#  ifdef WITH_SOCKS
+	char *socks5_host;
+	int socks5_port;
+	char *socks5_username;
+	char *socks5_password;
+#  endif
 	void *userdata;
 	bool in_callback;
 	unsigned int message_retry;
@@ -237,6 +248,12 @@ struct mosquitto {
 #  ifdef WITH_SRV
 	ares_channel achan;
 #  endif
+#endif
+
+#ifdef WITH_BROKER
+	UT_hash_handle hh_id;
+	UT_hash_handle hh_sock;
+	struct mosquitto *for_free_next;
 #endif
 };
 

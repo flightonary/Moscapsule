@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		094821041B0E2EB600099178 /* socks_mosq.c in Sources */ = {isa = PBXBuildFile; fileRef = 094821021B0E2EB600099178 /* socks_mosq.c */; };
+		094821051B0E2EB600099178 /* socks_mosq.h in Headers */ = {isa = PBXBuildFile; fileRef = 094821031B0E2EB600099178 /* socks_mosq.h */; };
 		09CF6B191A21F78700A97383 /* Moscapsule.h in Headers */ = {isa = PBXBuildFile; fileRef = 09CF6B181A21F78700A97383 /* Moscapsule.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		09CF6B1F1A21F78700A97383 /* Moscapsule.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 09CF6B131A21F78700A97383 /* Moscapsule.framework */; };
 		09CF6B261A21F78700A97383 /* MoscapsuleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09CF6B251A21F78700A97383 /* MoscapsuleTests.swift */; };
@@ -58,6 +60,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		094821021B0E2EB600099178 /* socks_mosq.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = socks_mosq.c; path = mosquitto/lib/socks_mosq.c; sourceTree = "<group>"; };
+		094821031B0E2EB600099178 /* socks_mosq.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = socks_mosq.h; path = mosquitto/lib/socks_mosq.h; sourceTree = "<group>"; };
 		09CF6B131A21F78700A97383 /* Moscapsule.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Moscapsule.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		09CF6B171A21F78700A97383 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		09CF6B181A21F78700A97383 /* Moscapsule.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Moscapsule.h; sourceTree = "<group>"; };
@@ -211,6 +215,8 @@
 				09CF6B421A21F7E600A97383 /* send_client_mosq.c */,
 				09CF6B431A21F7E600A97383 /* send_mosq.c */,
 				09CF6B441A21F7E600A97383 /* send_mosq.h */,
+				094821021B0E2EB600099178 /* socks_mosq.c */,
+				094821031B0E2EB600099178 /* socks_mosq.h */,
 				09CF6B451A21F7E600A97383 /* srv_mosq.c */,
 				09CF6B461A21F7E600A97383 /* thread_mosq.c */,
 				09CF6B471A21F7E600A97383 /* time_mosq.c */,
@@ -244,6 +250,7 @@
 				09CF6B551A21F7E600A97383 /* messages_mosq.h in Headers */,
 				09CF6B511A21F7E600A97383 /* logging_mosq.h in Headers */,
 				09CF6B561A21F7E600A97383 /* mosquitto_internal.h in Headers */,
+				094821051B0E2EB600099178 /* socks_mosq.h in Headers */,
 				09CF6B661A21F7E600A97383 /* time_mosq.h in Headers */,
 				09CF6B6C1A21F7E600A97383 /* will_mosq.h in Headers */,
 				09CF6B5F1A21F7E600A97383 /* read_handle.h in Headers */,
@@ -354,6 +361,7 @@
 				09CF6B611A21F7E600A97383 /* send_mosq.c in Sources */,
 				09CF6B6B1A21F7E600A97383 /* will_mosq.c in Sources */,
 				09CF6B701A21F88000A97383 /* Moscapsule.swift in Sources */,
+				094821041B0E2EB600099178 /* socks_mosq.c in Sources */,
 				09CF6B5A1A21F7E600A97383 /* net_mosq.c in Sources */,
 				09CF6B541A21F7E600A97383 /* messages_mosq.c in Sources */,
 				09CF6B631A21F7E600A97383 /* srv_mosq.c in Sources */,

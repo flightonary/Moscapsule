@@ -1,37 +1,17 @@
 /*
 Copyright (c) 2010-2014 Roger Light <roger@atchoo.org>
-All rights reserved.
 
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-
-1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
-3. Neither the name of mosquitto nor the names of its
-   contributors may be used to endorse or promote products derived from
-   this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
-LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
-
-
-This product includes software developed by the OpenSSL Project for use in the
-OpenSSL Toolkit. (http://www.openssl.org/)
-This product includes cryptographic software written by Eric Young
-(eay@cryptsoft.com)
-This product includes software written by Tim Hudson (tjh@cryptsoft.com)
+All rights reserved. This program and the accompanying materials
+are made available under the terms of the Eclipse Public License v1.0
+and Eclipse Distribution License v1.0 which accompany this distribution.
+ 
+The Eclipse Public License is available at
+   http://www.eclipse.org/legal/epl-v10.html
+and the Eclipse Distribution License is available at
+  http://www.eclipse.org/org/documents/edl-v10.php.
+ 
+Contributors:
+   Roger Light - initial implementation and documentation.
 */
 
 #ifndef _MOSQUITTO_H_
@@ -64,8 +44,8 @@ extern "C" {
 #endif
 
 #define LIBMOSQUITTO_MAJOR 1
-#define LIBMOSQUITTO_MINOR 3
-#define LIBMOSQUITTO_REVISION 5
+#define LIBMOSQUITTO_MINOR 4
+#define LIBMOSQUITTO_REVISION 2
 /* LIBMOSQUITTO_VERSION_NUMBER looks like 1002001 for e.g. version 1.2.1. */
 #define LIBMOSQUITTO_VERSION_NUMBER (LIBMOSQUITTO_MAJOR*1000000+LIBMOSQUITTO_MINOR*1000+LIBMOSQUITTO_REVISION)
 
@@ -78,6 +58,7 @@ extern "C" {
 #define MOSQ_LOG_DEBUG 0x10
 #define MOSQ_LOG_SUBSCRIBE 0x20
 #define MOSQ_LOG_UNSUBSCRIBE 0x40
+#define MOSQ_LOG_WEBSOCKETS 0x80
 #define MOSQ_LOG_ALL 0xFFFF
 
 /* Error values */
@@ -98,11 +79,20 @@ enum mosq_err_t {
 	MOSQ_ERR_ACL_DENIED = 12,
 	MOSQ_ERR_UNKNOWN = 13,
 	MOSQ_ERR_ERRNO = 14,
-	MOSQ_ERR_EAI = 15
+	MOSQ_ERR_EAI = 15,
+	MOSQ_ERR_PROXY = 16
+};
+
+/* Error values */
+enum mosq_opt_t {
+	MOSQ_OPT_PROTOCOL_VERSION = 1,
 };
 
 /* MQTT specification restricts client ids to a maximum of 23 characters */
 #define MOSQ_MQTT_ID_MAX_LENGTH 23
+
+#define MQTT_PROTOCOL_V31 3
+#define MQTT_PROTOCOL_V311 4
 
 struct mosquitto_message{
 	int mid;
@@ -119,6 +109,11 @@ struct mosquitto;
  * Topic: Threads
  *	libmosquitto provides thread safe operation, with the exception of
  *	<mosquitto_lib_init> which is not thread safe.
+ *
+ *	If your application uses threads you must use <mosquitto_threaded_set> to
+ *	tell the library this is the case, otherwise it makes some optimisations
+ *	for the single threaded case that may result in unexpected behaviour for
+ *	the multi threaded case.
  */
 /***************************************************
  * Important note
@@ -418,10 +413,10 @@ libmosq_EXPORT int mosquitto_connect_bind(struct mosquitto *mosq, const char *ho
 libmosq_EXPORT int mosquitto_connect_async(struct mosquitto *mosq, const char *host, int port, int keepalive);
 
 /*
- * Function: mosquitto_connect_async
+ * Function: mosquitto_connect_bind_async
  *
  * Connect to an MQTT broker. This is a non-blocking call. If you use
- * <mosquitto_connect_async> your client must use the threaded interface
+ * <mosquitto_connect_bind_async> your client must use the threaded interface
  * <mosquitto_loop_start>. If you need to use <mosquitto_loop>, you must use
  * <mosquitto_connect> to connect the client.
  *
@@ -916,6 +911,42 @@ libmosq_EXPORT int mosquitto_loop_misc(struct mosquitto *mosq);
 libmosq_EXPORT bool mosquitto_want_write(struct mosquitto *mosq);
 
 /*
+ * Function: mosquitto_threaded_set
+ *
+ * Used to tell the library that your application is using threads, but not
+ * using <mosquitto_loop_start>. The library operates slightly differently when
+ * not in threaded mode in order to simplify its operation. If you are managing
+ * your own threads and do not use this function you will experience crashes
+ * due to race conditions.
+ *
+ * When using <mosquitto_loop_start>, this is set automatically.
+ *
+ * Parameters:
+ *  mosq -     a valid mosquitto instance.
+ *  threaded - true if your application is using threads, false otherwise.
+ */
+libmosq_EXPORT int mosquitto_threaded_set(struct mosquitto *mosq, bool threaded);
+
+/*
+ * Function: mosquitto_opts_set
+ *
+ * Used to set options for the client.
+ *
+ * Parameters:
+ *	mosq -   a valid mosquitto instance.
+ *	option - the option to set.
+ *	value -  the option specific value.
+ *
+ * Options:
+ *	MOSQ_OPT_PROTOCOL_VERSION - value must be an int, set to either
+ *	                            MQTT_PROTOCOL_V31 or MQTT_PROTOCOL_V311. Must
+ *	                            be set before the client connects. Defaults to
+ *	                            MQTT_PROTOCOL_V31.
+ */
+libmosq_EXPORT int mosquitto_opts_set(struct mosquitto *mosq, enum mosq_opt_t option, void *value);
+
+
+/*
  * Function: mosquitto_tls_set
  *
  * Configure the client for certificate based SSL/TLS support. Must be called
@@ -1292,6 +1323,29 @@ libmosq_EXPORT void mosquitto_message_retry_set(struct mosquitto *mosq, unsigned
  */
 libmosq_EXPORT void mosquitto_user_data_set(struct mosquitto *mosq, void *obj);
 
+/* =============================================================================
+ *
+ * Section: SOCKS5 proxy functions
+ *
+ * =============================================================================
+ */
+
+/*
+ * Function: mosquitto_socks5_set
+ *
+ * Configure the client to use a SOCKS5 proxy when connecting. Must be called
+ * before connecting. "None" and "username/password" authentication is
+ * supported.
+ *
+ * Parameters:
+ *   mosq - a valid mosquitto instance.
+ *   host - the SOCKS5 proxy host to connect to.
+ *   port - the SOCKS5 proxy port to use.
+ *   username - if not NULL, use this username when authenticating with the proxy.
+ *   password - if not NULL and username is not NULL, use this password when
+ *              authenticating with the proxy.
+ */
+libmosq_EXPORT int mosquitto_socks5_set(struct mosquitto *mosq, const char *host, int port, const char *username, const char *password);
 
 /* =============================================================================
  *
@@ -1421,6 +1475,57 @@ libmosq_EXPORT int mosquitto_sub_topic_tokens_free(char ***topics, int count);
  * 	MOSQ_ERR_NOMEM -   if an out of memory condition occurred.
  */
 libmosq_EXPORT int mosquitto_topic_matches_sub(const char *sub, const char *topic, bool *result);
+
+/*
+ * Function: mosquitto_pub_topic_check
+ *
+ * Check whether a topic to be used for publishing is valid.
+ *
+ * This searches for + or # in a topic and checks its length.
+ *
+ * This check is already carried out in <mosquitto_publish> and
+ * <mosquitto_will_set>, there is no need to call it directly before them. It
+ * may be useful if you wish to check the validity of a topic in advance of
+ * making a connection for example.
+ *
+ * Parameters:
+ *   topic - the topic to check
+ *
+ * Returns:
+ *   MOSQ_ERR_SUCCESS - for a valid topic
+ *   MOSQ_ERR_INVAL - if the topic contains a + or a #, or if it is too long.
+ *
+ * See Also:
+ *   <mosquitto_sub_topic_check>
+ */
+libmosq_EXPORT int mosquitto_pub_topic_check(const char *topic);
+
+/*
+ * Function: mosquitto_sub_topic_check
+ *
+ * Check whether a topic to be used for subscribing is valid.
+ *
+ * This searches for + or # in a topic and checks that they aren't in invalid
+ * positions, such as with foo/#/bar, foo/+bar or foo/bar#, and checks its
+ * length.
+ *
+ * This check is already carried out in <mosquitto_subscribe> and
+ * <mosquitto_unsubscribe>, there is no need to call it directly before them.
+ * It may be useful if you wish to check the validity of a topic in advance of
+ * making a connection for example.
+ *
+ * Parameters:
+ *   topic - the topic to check
+ *
+ * Returns:
+ *   MOSQ_ERR_SUCCESS - for a valid topic
+ *   MOSQ_ERR_INVAL - if the topic contains a + or a # that is in an invalid
+ *                    position, or if it is too long.
+ *
+ * See Also:
+ *   <mosquitto_sub_topic_check>
+ */
+libmosq_EXPORT int mosquitto_sub_topic_check(const char *topic);
 
 #ifdef __cplusplus
 }

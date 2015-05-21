@@ -1,57 +1,39 @@
 /*
-Copyright (c) 2009-2013 Roger Light <roger@atchoo.org>
-All rights reserved.
+Copyright (c) 2009-2014 Roger Light <roger@atchoo.org>
 
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-
-1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
-3. Neither the name of mosquitto nor the names of its
-   contributors may be used to endorse or promote products derived from
-   this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
-LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
+All rights reserved. This program and the accompanying materials
+are made available under the terms of the Eclipse Public License v1.0
+and Eclipse Distribution License v1.0 which accompany this distribution.
+ 
+The Eclipse Public License is available at
+   http://www.eclipse.org/legal/epl-v10.html
+and the Eclipse Distribution License is available at
+  http://www.eclipse.org/org/documents/edl-v10.php.
+ 
+Contributors:
+   Roger Light - initial implementation and documentation.
 */
 
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
 
-#include "mosquitto.h"
-#include "logging_mosq.h"
-#include "memory_mosq.h"
-#include "messages_mosq.h"
-#include "mqtt3_protocol.h"
-#include "net_mosq.h"
-#include "read_handle.h"
-#include "send_mosq.h"
-#include "util_mosq.h"
+#include <mosquitto.h>
+#include <logging_mosq.h>
+#include <memory_mosq.h>
+#include <messages_mosq.h>
+#include <mqtt3_protocol.h>
+#include <net_mosq.h>
+#include <read_handle.h>
+#include <send_mosq.h>
+#include <util_mosq.h>
 #ifdef WITH_BROKER
-#include "mosquitto_broker.h"
+#include <mosquitto_broker.h>
 #endif
 
 int _mosquitto_handle_pingreq(struct mosquitto *mosq)
 {
 	assert(mosq);
-#ifdef WITH_STRICT_PROTOCOL
-	if(mosq->in_packet.remaining_length != 0){
-		return MOSQ_ERR_PROTOCOL;
-	}
-#endif
 #ifdef WITH_BROKER
 	_mosquitto_log_printf(NULL, MOSQ_LOG_DEBUG, "Received PINGREQ from %s", mosq->id);
 #else
@@ -63,11 +45,6 @@ int _mosquitto_handle_pingreq(struct mosquitto *mosq)
 int _mosquitto_handle_pingresp(struct mosquitto *mosq)
 {
 	assert(mosq);
-#ifdef WITH_STRICT_PROTOCOL
-	if(mosq->in_packet.remaining_length != 0){
-		return MOSQ_ERR_PROTOCOL;
-	}
-#endif
 	mosq->ping_t = 0; /* No longer waiting for a PINGRESP. */
 #ifdef WITH_BROKER
 	_mosquitto_log_printf(NULL, MOSQ_LOG_DEBUG, "Received PINGRESP from %s", mosq->id);
@@ -77,24 +54,23 @@ int _mosquitto_handle_pingresp(struct mosquitto *mosq)
 	return MOSQ_ERR_SUCCESS;
 }
 
+#ifdef WITH_BROKER
+int _mosquitto_handle_pubackcomp(struct mosquitto_db *db, struct mosquitto *mosq, const char *type)
+#else
 int _mosquitto_handle_pubackcomp(struct mosquitto *mosq, const char *type)
+#endif
 {
 	uint16_t mid;
 	int rc;
 
 	assert(mosq);
-#ifdef WITH_STRICT_PROTOCOL
-	if(mosq->in_packet.remaining_length != 2){
-		return MOSQ_ERR_PROTOCOL;
-	}
-#endif
 	rc = _mosquitto_read_uint16(&mosq->in_packet, &mid);
 	if(rc) return rc;
 #ifdef WITH_BROKER
 	_mosquitto_log_printf(NULL, MOSQ_LOG_DEBUG, "Received %s from %s (Mid: %d)", type, mosq->id, mid);
 
 	if(mid){
-		rc = mqtt3_db_message_delete(mosq, mid, mosq_md_out);
+		rc = mqtt3_db_message_delete(db, mosq, mid, mosq_md_out);
 		if(rc) return rc;
 	}
 #else
@@ -121,11 +97,6 @@ int _mosquitto_handle_pubrec(struct mosquitto *mosq)
 	int rc;
 
 	assert(mosq);
-#ifdef WITH_STRICT_PROTOCOL
-	if(mosq->in_packet.remaining_length != 2){
-		return MOSQ_ERR_PROTOCOL;
-	}
-#endif
 	rc = _mosquitto_read_uint16(&mosq->in_packet, &mid);
 	if(rc) return rc;
 #ifdef WITH_BROKER
@@ -138,7 +109,7 @@ int _mosquitto_handle_pubrec(struct mosquitto *mosq)
 	rc = _mosquitto_message_out_update(mosq, mid, mosq_ms_wait_for_pubcomp);
 #endif
 	if(rc) return rc;
-	rc = _mosquitto_send_pubrel(mosq, mid, false);
+	rc = _mosquitto_send_pubrel(mosq, mid);
 	if(rc) return rc;
 
 	return MOSQ_ERR_SUCCESS;
@@ -153,11 +124,6 @@ int _mosquitto_handle_pubrel(struct mosquitto_db *db, struct mosquitto *mosq)
 	int rc;
 
 	assert(mosq);
-#ifdef WITH_STRICT_PROTOCOL
-	if(mosq->in_packet.remaining_length != 2){
-		return MOSQ_ERR_PROTOCOL;
-	}
-#endif
 	if(mosq->protocol == mosq_p_mqtt311){
 		if((mosq->in_packet.command&0x0F) != 0x02){
 			return MOSQ_ERR_PROTOCOL;
@@ -244,11 +210,6 @@ int _mosquitto_handle_unsuback(struct mosquitto *mosq)
 	int rc;
 
 	assert(mosq);
-#ifdef WITH_STRICT_PROTOCOL
-	if(mosq->in_packet.remaining_length != 2){
-		return MOSQ_ERR_PROTOCOL;
-	}
-#endif
 #ifdef WITH_BROKER
 	_mosquitto_log_printf(NULL, MOSQ_LOG_DEBUG, "Received UNSUBACK from %s", mosq->id);
 #else

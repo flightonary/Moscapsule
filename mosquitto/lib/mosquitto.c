@@ -1,30 +1,17 @@
 /*
-Copyright (c) 2010-2013 Roger Light <roger@atchoo.org>
-All rights reserved.
+Copyright (c) 2010-2014 Roger Light <roger@atchoo.org>
 
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-
-1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
-3. Neither the name of mosquitto nor the names of its
-   contributors may be used to endorse or promote products derived from
-   this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
-LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
+All rights reserved. This program and the accompanying materials
+are made available under the terms of the Eclipse Public License v1.0
+and Eclipse Distribution License v1.0 which accompany this distribution.
+ 
+The Eclipse Public License is available at
+   http://www.eclipse.org/legal/epl-v10.html
+and the Eclipse Distribution License is available at
+  http://www.eclipse.org/org/documents/edl-v10.php.
+ 
+Contributors:
+   Roger Light - initial implementation and documentation.
 */
 
 #include <assert.h>
@@ -42,19 +29,20 @@ POSSIBILITY OF SUCH DAMAGE.
 typedef int ssize_t;
 #endif
 
-#include "mosquitto.h"
-#include "mosquitto_internal.h"
-#include "logging_mosq.h"
-#include "messages_mosq.h"
-#include "memory_mosq.h"
-#include "mqtt3_protocol.h"
-#include "net_mosq.h"
-#include "read_handle.h"
-#include "send_mosq.h"
-#include "time_mosq.h"
-#include "tls_mosq.h"
-#include "util_mosq.h"
-#include "will_mosq.h"
+#include <mosquitto.h>
+#include <mosquitto_internal.h>
+#include <logging_mosq.h>
+#include <messages_mosq.h>
+#include <memory_mosq.h>
+#include <mqtt3_protocol.h>
+#include <net_mosq.h>
+#include <read_handle.h>
+#include <send_mosq.h>
+#include <socks_mosq.h>
+#include <time_mosq.h>
+#include <tls_mosq.h>
+#include <util_mosq.h>
+#include <will_mosq.h>
 
 #if !defined(WIN32) && !defined(__SYMBIAN32__)
 #define HAVE_PSELECT
@@ -151,6 +139,7 @@ int mosquitto_reinitialise(struct mosquitto *mosq, const char *id, bool clean_se
 	}else{
 		mosq->userdata = mosq;
 	}
+	mosq->protocol = mosq_p_mqtt31;
 	mosq->sock = INVALID_SOCKET;
 	mosq->sockpairR = INVALID_SOCKET;
 	mosq->sockpairW = INVALID_SOCKET;
@@ -211,6 +200,7 @@ int mosquitto_reinitialise(struct mosquitto *mosq, const char *id, bool clean_se
 	mosq->ssl = NULL;
 	mosq->tls_cert_reqs = SSL_VERIFY_PEER;
 	mosq->tls_insecure = false;
+	mosq->want_write = false;
 #endif
 #ifdef WITH_THREADING
 	pthread_mutex_init(&mosq->callback_mutex, NULL);
@@ -221,6 +211,7 @@ int mosquitto_reinitialise(struct mosquitto *mosq, const char *id, bool clean_se
 	pthread_mutex_init(&mosq->msgtime_mutex, NULL);
 	pthread_mutex_init(&mosq->in_message_mutex, NULL);
 	pthread_mutex_init(&mosq->out_message_mutex, NULL);
+	pthread_mutex_init(&mosq->mid_mutex, NULL);
 	mosq->thread_id = pthread_self();
 #endif
 
@@ -303,6 +294,7 @@ void _mosquitto_destroy(struct mosquitto *mosq)
 		pthread_mutex_destroy(&mosq->msgtime_mutex);
 		pthread_mutex_destroy(&mosq->in_message_mutex);
 		pthread_mutex_destroy(&mosq->out_message_mutex);
+		pthread_mutex_destroy(&mosq->mid_mutex);
 	}
 #endif
 	if(mosq->sock != INVALID_SOCKET){
@@ -391,7 +383,7 @@ void mosquitto_destroy(struct mosquitto *mosq)
 
 int mosquitto_socket(struct mosquitto *mosq)
 {
-	if(!mosq) return MOSQ_ERR_INVAL;
+	if(!mosq) return INVALID_SOCKET;
 	return mosq->sock;
 }
 
@@ -474,7 +466,14 @@ static int _mosquitto_reconnect(struct mosquitto *mosq, bool blocking)
 	if(!mosq->host || mosq->port <= 0) return MOSQ_ERR_INVAL;
 
 	pthread_mutex_lock(&mosq->state_mutex);
-	mosq->state = mosq_cs_new;
+#ifdef WITH_SOCKS
+	if(mosq->socks5_host){
+		mosq->state = mosq_cs_socks5_new;
+	}else
+#endif
+	{
+		mosq->state = mosq_cs_new;
+	}
 	pthread_mutex_unlock(&mosq->state_mutex);
 
 	pthread_mutex_lock(&mosq->msgtime_mutex);
@@ -510,12 +509,26 @@ static int _mosquitto_reconnect(struct mosquitto *mosq, bool blocking)
 
 	_mosquitto_messages_reconnect_reset(mosq);
 
-	rc = _mosquitto_socket_connect(mosq, mosq->host, mosq->port, mosq->bind_address, blocking);
-	if(rc){
+#ifdef WITH_SOCKS
+	if(mosq->socks5_host){
+		rc = _mosquitto_socket_connect(mosq, mosq->socks5_host, mosq->socks5_port, mosq->bind_address, blocking);
+	}else
+#endif
+	{
+		rc = _mosquitto_socket_connect(mosq, mosq->host, mosq->port, mosq->bind_address, blocking);
+	}
+	if(rc>0){
 		return rc;
 	}
 
-	return _mosquitto_send_connect(mosq, mosq->keepalive, mosq->clean_session);
+#ifdef WITH_SOCKS
+	if(mosq->socks5_host){
+		return mosquitto__socks5_send(mosq);
+	}else
+#endif
+	{
+		return _mosquitto_send_connect(mosq, mosq->keepalive, mosq->clean_session);
+	}
 }
 
 int mosquitto_disconnect(struct mosquitto *mosq)
@@ -539,7 +552,7 @@ int mosquitto_publish(struct mosquitto *mosq, int *mid, const char *topic, int p
 	if(strlen(topic) == 0) return MOSQ_ERR_INVAL;
 	if(payloadlen < 0 || payloadlen > MQTT_MAX_PAYLOAD) return MOSQ_ERR_PAYLOAD_SIZE;
 
-	if(_mosquitto_topic_wildcard_len_check(topic) != MOSQ_ERR_SUCCESS){
+	if(mosquitto_pub_topic_check(topic) != MOSQ_ERR_SUCCESS){
 		return MOSQ_ERR_INVAL;
 	}
 
@@ -581,7 +594,6 @@ int mosquitto_publish(struct mosquitto *mosq, int *mid, const char *topic, int p
 		pthread_mutex_lock(&mosq->out_message_mutex);
 		_mosquitto_message_queue(mosq, message, mosq_md_out);
 		if(mosq->max_inflight_messages == 0 || mosq->inflight_messages < mosq->max_inflight_messages){
-			mosq->inflight_messages++;
 			if(qos == 1){
 				message->state = mosq_ms_wait_for_puback;
 			}else if(qos == 2){
@@ -602,9 +614,9 @@ int mosquitto_subscribe(struct mosquitto *mosq, int *mid, const char *sub, int q
 	if(!mosq) return MOSQ_ERR_INVAL;
 	if(mosq->sock == INVALID_SOCKET) return MOSQ_ERR_NO_CONN;
 
-	if(_mosquitto_topic_wildcard_pos_check(sub)) return MOSQ_ERR_INVAL;
+	if(mosquitto_sub_topic_check(sub)) return MOSQ_ERR_INVAL;
 
-	return _mosquitto_send_subscribe(mosq, mid, false, sub, qos);
+	return _mosquitto_send_subscribe(mosq, mid, sub, qos);
 }
 
 int mosquitto_unsubscribe(struct mosquitto *mosq, int *mid, const char *sub)
@@ -612,9 +624,9 @@ int mosquitto_unsubscribe(struct mosquitto *mosq, int *mid, const char *sub)
 	if(!mosq) return MOSQ_ERR_INVAL;
 	if(mosq->sock == INVALID_SOCKET) return MOSQ_ERR_NO_CONN;
 
-	if(_mosquitto_topic_wildcard_pos_check(sub)) return MOSQ_ERR_INVAL;
+	if(mosquitto_sub_topic_check(sub)) return MOSQ_ERR_INVAL;
 
-	return _mosquitto_send_unsubscribe(mosq, mid, false, sub);
+	return _mosquitto_send_unsubscribe(mosq, mid, sub);
 }
 
 int mosquitto_tls_set(struct mosquitto *mosq, const char *cafile, const char *capath, const char *certfile, const char *keyfile, int (*pw_callback)(char *buf, int size, int rwflag, void *userdata))
@@ -819,6 +831,11 @@ int mosquitto_loop(struct mosquitto *mosq, int timeout, int max_packets)
 	int maxfd = 0;
 
 	if(!mosq || max_packets < 1) return MOSQ_ERR_INVAL;
+#ifndef WIN32
+	if(mosq->sock >= FD_SETSIZE || mosq->sockpairR >= FD_SETSIZE){
+		return MOSQ_ERR_INVAL;
+	}
+#endif
 
 	FD_ZERO(&readfds);
 	FD_ZERO(&writefds);
@@ -829,11 +846,21 @@ int mosquitto_loop(struct mosquitto *mosq, int timeout, int max_packets)
 		pthread_mutex_lock(&mosq->out_packet_mutex);
 		if(mosq->out_packet || mosq->current_out_packet){
 			FD_SET(mosq->sock, &writefds);
-#ifdef WITH_TLS
-		}else if(mosq->ssl && mosq->want_write){
-			FD_SET(mosq->sock, &writefds);
-#endif
 		}
+#ifdef WITH_TLS
+		if(mosq->ssl){
+			if(mosq->want_write){
+				FD_SET(mosq->sock, &writefds);
+				mosq->want_write = false;
+			}else if(mosq->want_connect){
+				/* Remove possible FD_SET from above, we don't want to check
+				 * for writing if we are still connecting, unless want_write is
+				 * definitely set. The presence of outgoing packets does not
+				 * matter yet. */
+				FD_CLR(mosq->sock, &writefds);
+			}
+		}
+#endif
 		pthread_mutex_unlock(&mosq->out_packet_mutex);
 		pthread_mutex_unlock(&mosq->current_out_packet_mutex);
 	}else{
@@ -846,6 +873,7 @@ int mosquitto_loop(struct mosquitto *mosq, int timeout, int max_packets)
 					maxfd = rc;
 				}
 			}else{
+				pthread_mutex_unlock(&mosq->state_mutex);
 				return MOSQ_ERR_NO_CONN;
 			}
 			pthread_mutex_unlock(&mosq->state_mutex);
@@ -896,12 +924,20 @@ int mosquitto_loop(struct mosquitto *mosq, int timeout, int max_packets)
 	}else{
 		if(mosq->sock != INVALID_SOCKET){
 			if(FD_ISSET(mosq->sock, &readfds)){
-				rc = mosquitto_loop_read(mosq, max_packets);
-				if(rc || mosq->sock == INVALID_SOCKET){
-					return rc;
+#ifdef WITH_TLS
+				if(mosq->want_connect){
+					rc = mosquitto__socket_connect_tls(mosq);
+					if(rc) return rc;
+				}else
+#endif
+				{
+					rc = mosquitto_loop_read(mosq, max_packets);
+					if(rc || mosq->sock == INVALID_SOCKET){
+						return rc;
+					}
 				}
 			}
-			if(mosq->sockpairR >= 0 && FD_ISSET(mosq->sockpairR, &readfds)){
+			if(mosq->sockpairR != INVALID_SOCKET && FD_ISSET(mosq->sockpairR, &readfds)){
 #ifndef WIN32
 				if(read(mosq->sockpairR, &pairbuf, 1) == 0){
 				}
@@ -914,9 +950,17 @@ int mosquitto_loop(struct mosquitto *mosq, int timeout, int max_packets)
 				FD_SET(mosq->sock, &writefds);
 			}
 			if(FD_ISSET(mosq->sock, &writefds)){
-				rc = mosquitto_loop_write(mosq, max_packets);
-				if(rc || mosq->sock == INVALID_SOCKET){
-					return rc;
+#ifdef WITH_TLS
+				if(mosq->want_connect){
+					rc = mosquitto__socket_connect_tls(mosq);
+					if(rc) return rc;
+				}else
+#endif
+				{
+					rc = mosquitto_loop_write(mosq, max_packets);
+					if(rc || mosq->sock == INVALID_SOCKET){
+						return rc;
+					}
 				}
 			}
 		}
@@ -948,44 +992,65 @@ int mosquitto_loop_forever(struct mosquitto *mosq, int timeout, int max_packets)
 			if (reconnects !=0 && rc == MOSQ_ERR_SUCCESS){
 				reconnects = 0;
 			}
-		}while(rc == MOSQ_ERR_SUCCESS);
+		}while(run && rc == MOSQ_ERR_SUCCESS);
+		/* Quit after fatal errors. */
+		switch(rc){
+			case MOSQ_ERR_NOMEM:
+			case MOSQ_ERR_PROTOCOL:
+			case MOSQ_ERR_INVAL:
+			case MOSQ_ERR_NOT_FOUND:
+			case MOSQ_ERR_TLS:
+			case MOSQ_ERR_PAYLOAD_SIZE:
+			case MOSQ_ERR_NOT_SUPPORTED:
+			case MOSQ_ERR_AUTH:
+			case MOSQ_ERR_ACL_DENIED:
+			case MOSQ_ERR_UNKNOWN:
+			case MOSQ_ERR_EAI:
+			case MOSQ_ERR_PROXY:
+				return rc;
+			case MOSQ_ERR_ERRNO:
+				break;
+		}
 		if(errno == EPROTO){
 			return rc;
 		}
-		pthread_mutex_lock(&mosq->state_mutex);
-		if(mosq->state == mosq_cs_disconnecting){
-			run = 0;
-			pthread_mutex_unlock(&mosq->state_mutex);
-		}else{
-			pthread_mutex_unlock(&mosq->state_mutex);
-
-			if(mosq->reconnect_delay > 0 && mosq->reconnect_exponential_backoff){
-				reconnect_delay = mosq->reconnect_delay*reconnects*reconnects;
-			}else{
-				reconnect_delay = mosq->reconnect_delay;
-			}
-
-			if(reconnect_delay > mosq->reconnect_delay_max){
-				reconnect_delay = mosq->reconnect_delay_max;
-			}else{
-				reconnects++;
-			}
-				
-#ifdef WIN32
-			Sleep(reconnect_delay*1000);
-#else
-			sleep(reconnect_delay);
-#endif
-
+		do{
+			rc = MOSQ_ERR_SUCCESS;
 			pthread_mutex_lock(&mosq->state_mutex);
 			if(mosq->state == mosq_cs_disconnecting){
 				run = 0;
 				pthread_mutex_unlock(&mosq->state_mutex);
 			}else{
 				pthread_mutex_unlock(&mosq->state_mutex);
-				mosquitto_reconnect(mosq);
+
+				if(mosq->reconnect_delay > 0 && mosq->reconnect_exponential_backoff){
+					reconnect_delay = mosq->reconnect_delay*reconnects*reconnects;
+				}else{
+					reconnect_delay = mosq->reconnect_delay;
+				}
+
+				if(reconnect_delay > mosq->reconnect_delay_max){
+					reconnect_delay = mosq->reconnect_delay_max;
+				}else{
+					reconnects++;
+				}
+
+#ifdef WIN32
+				Sleep(reconnect_delay*1000);
+#else
+				sleep(reconnect_delay);
+#endif
+
+				pthread_mutex_lock(&mosq->state_mutex);
+				if(mosq->state == mosq_cs_disconnecting){
+					run = 0;
+					pthread_mutex_unlock(&mosq->state_mutex);
+				}else{
+					pthread_mutex_unlock(&mosq->state_mutex);
+					rc = mosquitto_reconnect(mosq);
+				}
 			}
-		}
+		}while(run && rc != MOSQ_ERR_SUCCESS);
 	}
 	return rc;
 }
@@ -998,9 +1063,8 @@ int mosquitto_loop_misc(struct mosquitto *mosq)
 	if(!mosq) return MOSQ_ERR_INVAL;
 	if(mosq->sock == INVALID_SOCKET) return MOSQ_ERR_NO_CONN;
 
-	now = mosquitto_time();
-
 	_mosquitto_check_keepalive(mosq);
+	now = mosquitto_time();
 	if(mosq->last_retry_check+1 < now){
 		_mosquitto_message_retry_check(mosq);
 		mosq->last_retry_check = now;
@@ -1069,7 +1133,14 @@ int mosquitto_loop_read(struct mosquitto *mosq, int max_packets)
 	 * have QoS > 0. We should try to deal with that many in this loop in order
 	 * to keep up. */
 	for(i=0; i<max_packets; i++){
-		rc = _mosquitto_packet_read(mosq);
+#ifdef WITH_SOCKS
+		if(mosq->socks5_host){
+			rc = mosquitto__socks5_read(mosq);
+		}else
+#endif
+		{
+			rc = _mosquitto_packet_read(mosq);
+		}
 		if(rc || errno == EAGAIN || errno == COMPAT_EWOULDBLOCK){
 			return _mosquitto_loop_rc_handle(mosq, rc);
 		}
@@ -1116,6 +1187,30 @@ bool mosquitto_want_write(struct mosquitto *mosq)
 		return false;
 	}
 }
+
+int mosquitto_opts_set(struct mosquitto *mosq, enum mosq_opt_t option, void *value)
+{
+	int ival;
+
+	if(!mosq || !value) return MOSQ_ERR_INVAL;
+
+	switch(option){
+		case MOSQ_OPT_PROTOCOL_VERSION:
+			ival = *((int *)value);
+			if(ival == MQTT_PROTOCOL_V31){
+				mosq->protocol = mosq_p_mqtt31;
+			}else if(ival == MQTT_PROTOCOL_V311){
+				mosq->protocol = mosq_p_mqtt311;
+			}else{
+				return MOSQ_ERR_INVAL;
+			}
+			break;
+		default:
+			return MOSQ_ERR_INVAL;
+	}
+	return MOSQ_ERR_SUCCESS;
+}
+
 
 void mosquitto_connect_callback_set(struct mosquitto *mosq, void (*on_connect)(struct mosquitto *, void *, int))
 {
@@ -1206,6 +1301,8 @@ const char *mosquitto_strerror(int mosq_errno)
 			return "Unknown error.";
 		case MOSQ_ERR_ERRNO:
 			return strerror(errno);
+		case MOSQ_ERR_PROXY:
+			return "Proxy error.";
 		default:
 			return "Unknown error.";
 	}
