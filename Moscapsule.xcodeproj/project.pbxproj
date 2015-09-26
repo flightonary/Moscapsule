@@ -44,7 +44,7 @@
 		09CF6B6C1A21F7E600A97383 /* will_mosq.h in Headers */ = {isa = PBXBuildFile; fileRef = 09CF6B4E1A21F7E600A97383 /* will_mosq.h */; };
 		09CF6B6E1A21F82600A97383 /* config.h in Headers */ = {isa = PBXBuildFile; fileRef = 09CF6B6D1A21F82600A97383 /* config.h */; };
 		09CF6B701A21F88000A97383 /* Moscapsule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09CF6B6F1A21F88000A97383 /* Moscapsule.swift */; };
-		C723AC9A1A3F29790018AEBB /* cert.bundle in Resources */ = {isa = PBXBuildFile; fileRef = C723AC991A3F29790018AEBB /* cert.bundle */; };
+		09FB79171BB6FA4100B22BAA /* cert.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 09FB79161BB6FA4100B22BAA /* cert.bundle */; settings = {ASSET_TAGS = (); }; };
 		C7360CC31A2435A8001F490F /* MosquittoCallbackBridge.m in Sources */ = {isa = PBXBuildFile; fileRef = C7360CC21A2435A8001F490F /* MosquittoCallbackBridge.m */; };
 		C7360CC51A243AB9001F490F /* MosquittoCallbackBridge.h in Headers */ = {isa = PBXBuildFile; fileRef = C7360CC41A243949001F490F /* MosquittoCallbackBridge.h */; settings = {ATTRIBUTES = (Public, ); }; };
 /* End PBXBuildFile section */
@@ -100,7 +100,7 @@
 		09CF6B4E1A21F7E600A97383 /* will_mosq.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = will_mosq.h; path = mosquitto/lib/will_mosq.h; sourceTree = "<group>"; };
 		09CF6B6D1A21F82600A97383 /* config.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = config.h; path = Moscapsule/config.h; sourceTree = "<group>"; };
 		09CF6B6F1A21F88000A97383 /* Moscapsule.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Moscapsule.swift; sourceTree = "<group>"; };
-		C723AC991A3F29790018AEBB /* cert.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; path = cert.bundle; sourceTree = "<group>"; };
+		09FB79161BB6FA4100B22BAA /* cert.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; path = cert.bundle; sourceTree = "<group>"; };
 		C7360CC21A2435A8001F490F /* MosquittoCallbackBridge.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MosquittoCallbackBridge.m; sourceTree = "<group>"; };
 		C7360CC41A243949001F490F /* MosquittoCallbackBridge.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MosquittoCallbackBridge.h; sourceTree = "<group>"; };
 		C7D24C911A3E94AC00C33384 /* download_mosquitto.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = download_mosquitto.sh; sourceTree = SOURCE_ROOT; };
@@ -169,7 +169,7 @@
 			isa = PBXGroup;
 			children = (
 				09CF6B251A21F78700A97383 /* MoscapsuleTests.swift */,
-				C723AC991A3F29790018AEBB /* cert.bundle */,
+				09FB79161BB6FA4100B22BAA /* cert.bundle */,
 				09CF6B231A21F78700A97383 /* Supporting Files */,
 			);
 			path = MoscapsuleTests;
@@ -304,7 +304,9 @@
 		09CF6B0A1A21F78700A97383 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 0610;
+				LastSwiftMigration = 0700;
+				LastSwiftUpdateCheck = 0700;
+				LastUpgradeCheck = 0700;
 				ORGANIZATIONNAME = flightonary;
 				TargetAttributes = {
 					09CF6B121A21F78700A97383 = {
@@ -345,7 +347,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				C723AC9A1A3F29790018AEBB /* cert.bundle in Resources */,
+				09FB79171BB6FA4100B22BAA /* cert.bundle in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -418,6 +420,7 @@
 				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_OPTIMIZATION_LEVEL = 0;
@@ -509,6 +512,7 @@
 					"-lssl",
 					"-lcrypto",
 				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.github.flightonary.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -543,6 +547,7 @@
 					"-lssl",
 					"-lcrypto",
 				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.github.flightonary.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				USER_HEADER_SEARCH_PATHS = "";
@@ -562,6 +567,7 @@
 				);
 				INFOPLIST_FILE = MoscapsuleTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.github.flightonary.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -575,6 +581,7 @@
 				);
 				INFOPLIST_FILE = MoscapsuleTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.github.flightonary.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;

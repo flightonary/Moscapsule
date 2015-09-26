@@ -234,9 +234,8 @@ public class MQTTConfig {
     
     public init(clientId: String, host: String, port: Int32, keepAlive: Int32) {
         // MQTT client ID is restricted to 23 characters in the MQTT v3.1 spec
-        self.clientId = { max in
-            (clientId as NSString).length <= max ? clientId : clientId.substringToIndex(advance(clientId.startIndex, max))
-        }(Int(MOSQ_MQTT_ID_MAX_LENGTH))
+        let restrictedIndex = clientId.startIndex.advancedBy(min(Int(MOSQ_MQTT_ID_MAX_LENGTH), clientId.characters.count))
+        self.clientId = clientId.substringToIndex(restrictedIndex)
         self.host = host
         self.port = port
         self.keepAlive = keepAlive
@@ -245,8 +244,7 @@ public class MQTTConfig {
     }
 }
 
-@objc(__MosquittoContext)
-public final class __MosquittoContext {
+public final class __MosquittoContext : NSObject {
     public var mosquittoHandler: COpaquePointer = nil
     public var isConnected: Bool = false
     public var onConnectCallback: ((returnCode: Int) -> ())!
@@ -256,7 +254,7 @@ public final class __MosquittoContext {
     public var onSubscribeCallback: ((messageId: Int, qosCount: Int, grantedQos: UnsafePointer<Int32>) -> ())!
     public var onUnsubscribeCallback: ((messageId: Int) -> ())!
     public var keyfile_passwd: String = ""
-    internal init(){}
+    internal override init(){}
 }
 
 public final class MQTTMessage {
@@ -373,7 +371,7 @@ public final class MQTT {
     private class func onSubscribeAdapter(callback: ((Int, Array<Int32>) -> ())!) -> ((Int, Int, UnsafePointer<Int32>) -> ())! {
         return callback == nil ? nil : { (messageId: Int, qosCount: Int, grantedQos: UnsafePointer<Int32>) in
             var grantedQosList = [Int32](count: qosCount, repeatedValue: Qos.At_Least_Once)
-            Array(0..<qosCount).reduce(grantedQos) { (qosPointer, index) in
+            let _ = Array(0..<qosCount).reduce(grantedQos) { (qosPointer, index) in
                 grantedQosList[index] = qosPointer.memory
                 return qosPointer.successor()
             }

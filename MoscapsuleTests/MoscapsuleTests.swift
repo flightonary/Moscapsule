@@ -50,7 +50,9 @@ class MoscapsuleTests: XCTestCase {
     }
 
     func testConnectToMQTTServer() {
-        let mqttConfig = MQTTConfig(clientId: "connect_test", host: "test.mosquitto.org", port: 1883, keepAlive: 60)
+        let clientId = "connect_test 1234567890abcdef"
+        XCTAssertTrue(clientId.characters.count > Int(MOSQ_MQTT_ID_MAX_LENGTH))
+        let mqttConfig = MQTTConfig(clientId: clientId, host: "test.mosquitto.org", port: 1883, keepAlive: 60)
         
         mqttConfig.onConnectCallback = { returnCode in
             NSLog("Return Code is \(returnCode.description) (this callback is declared in swift.)")
@@ -71,7 +73,7 @@ class MoscapsuleTests: XCTestCase {
     func testPublishAndSubscribe() {
         let mqttConfigPub = MQTTConfig(clientId: "pub", host: "test.mosquitto.org", port: 1883, keepAlive: 60)
         var published = false
-        var payload = "ほげほげ"
+        let payload = "ほげほげ"
         mqttConfigPub.onPublishCallback = { messageId in
             NSLog("published (mid=\(messageId))")
             published = true
@@ -137,7 +139,7 @@ class MoscapsuleTests: XCTestCase {
             mqttConfig.onDisconnectCallback = { reasonCode in
                 disconnected = true
             }
-            let mqttClient = MQTT.newConnection(mqttConfig)
+            let _ = MQTT.newConnection(mqttConfig)
         }
         closure()
         sleep(3)
@@ -192,8 +194,8 @@ class MoscapsuleTests: XCTestCase {
             NSLog("Return Code is \(returnCode.description) (this callback is declared in swift.)")
         }
 
-        let bundlePath : String = NSBundle(forClass: self.dynamicType).bundlePath.stringByAppendingPathComponent("cert.bundle")
-        let certFile = bundlePath.stringByAppendingPathComponent("mosquitto.org.crt")
+        let bundleURL = NSURL(fileURLWithPath: NSBundle(forClass: self.dynamicType).pathForResource("cert", ofType: "bundle")!)
+        let certFile = bundleURL.URLByAppendingPathComponent("mosquitto.org.crt").path!
 
         mqttConfig.mqttServerCert = MQTTServerCert(cafile: certFile, capath: nil)
         //mqttConfig.mqttTlsOpts = MQTTTlsOpts(tls_insecure: true, cert_reqs: .SSL_VERIFY_NONE, tls_version: nil, ciphers: nil)
