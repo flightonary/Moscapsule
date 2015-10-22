@@ -269,7 +269,7 @@ public final class __MosquittoContext : NSObject {
 }
 
 public final class MQTT {
-    public class func newConnection(mqttConfig: MQTTConfig) -> MQTTClient {
+    public class func newConnection(mqttConfig: MQTTConfig, connectImmediately: Bool = true) -> MQTTClient {
         let mosquittoContext = __MosquittoContext()
         mosquittoContext.onConnectCallback = onConnectAdapter(mqttConfig.onConnectCallback)
         mosquittoContext.onDisconnectCallback = onDisconnectAdapter(mqttConfig.onDisconnectCallback)
@@ -329,11 +329,11 @@ public final class MQTT {
         let host = mqttConfig.host
         let port = mqttConfig.port
         let keepAlive = mqttConfig.keepAlive
-        mqttClient.serialQueue.addOperationWithBlock {
-            mosquitto_connect(mosquittoContext.mosquittoHandler, host.cCharArray, port, keepAlive)
-            mosquitto_loop_start(mosquittoContext.mosquittoHandler)
+
+        if connectImmediately {
+            mqttClient.connect(host.cCharArray, port: port, keepAlive: keepAlive)
         }
-        
+
         return mqttClient
     }
 
@@ -374,12 +374,13 @@ public final class MQTT {
 public final class MQTTClient {
     private let mosquittoContext: __MosquittoContext
     public private(set) var isFinished: Bool = false
-    internal let serialQueue: NSOperationQueue = {
+    private let serialQueue: NSOperationQueue = {
         let queue = NSOperationQueue()
         queue.name = "MQTT Client Operation Queue"
         queue.maxConcurrentOperationCount = 1
         return queue
     }()
+
     public var isConnected: Bool {
         return mosquittoContext.isConnected
     }
@@ -394,7 +395,7 @@ public final class MQTTClient {
 
     public func publish(payload: NSData, topic: String, qos: Int32, retain: Bool, requestCompletion: ((MosqResult, Int) -> ())? = nil) {
         serialQueue.addOperationWithBlock {
-            if (!self.isFinished) {
+            if !self.isFinished {
                 var messageId: Int32 = 0
                 let mosqReturn = mosquitto_publish(self.mosquittoContext.mosquittoHandler, &messageId, topic.cCharArray,
                     Int32(payload.length), payload.bytes, qos, retain)
@@ -411,7 +412,7 @@ public final class MQTTClient {
 
     public func subscribe(topic: String, qos: Int32, requestCompletion: ((MosqResult, Int) -> ())? = nil) {
         serialQueue.addOperationWithBlock {
-            if (!self.isFinished) {
+            if !self.isFinished {
                 var messageId: Int32 = 0
                 let mosqReturn = mosquitto_subscribe(self.mosquittoContext.mosquittoHandler, &messageId, topic.cCharArray, qos)
                 requestCompletion?(MosqResult(rawValue: Int(mosqReturn)) ?? MosqResult.MOSQ_UNKNOWN, Int(messageId))
@@ -421,7 +422,7 @@ public final class MQTTClient {
 
     public func unsubscribe(topic: String, requestCompletion: ((MosqResult, Int) -> ())? = nil) {
         serialQueue.addOperationWithBlock {
-            if (!self.isFinished) {
+            if !self.isFinished {
                 var messageId: Int32 = 0
                 let mosqReturn = mosquitto_unsubscribe(self.mosquittoContext.mosquittoHandler, &messageId, topic.cCharArray)
                 requestCompletion?(MosqResult(rawValue: Int(mosqReturn)) ?? MosqResult.MOSQ_UNKNOWN, Int(messageId))
@@ -429,8 +430,25 @@ public final class MQTTClient {
         }
     }
 
+    public func connect(host: [CChar], port: Int32, keepAlive: Int32) {
+        serialQueue.addOperationWithBlock {
+            if !self.isFinished {
+                mosquitto_connect(self.mosquittoContext.mosquittoHandler, host, port, keepAlive)
+                mosquitto_loop_start(self.mosquittoContext.mosquittoHandler)
+            }
+        }
+    }
+
+    public func reconnect() {
+        serialQueue.addOperationWithBlock {
+            if !self.isFinished {
+                mosquitto_reconnect(self.mosquittoContext.mosquittoHandler)
+            }
+        }
+    }
+
     public func disconnect() {
-        if (!isFinished) {
+        if !isFinished {
             isFinished = true
             let context = mosquittoContext
             serialQueue.addOperationWithBlock {
