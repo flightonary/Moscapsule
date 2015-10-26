@@ -221,7 +221,7 @@ public struct MQTTMessage {
     }
 }
 
-public class MQTTConfig {
+public final class MQTTConfig {
     public let clientId: String
     public let host: String
     public let port: Int32
