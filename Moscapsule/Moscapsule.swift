@@ -209,6 +209,17 @@ public struct MQTTPsk {
     }
 }
 
+public struct MQTTMessage {
+    public let messageId: Int
+    public let topic: String
+    public let payload: NSData
+    public let qos: Int32
+    public let retain: Bool
+
+    public var payloadString: String? {
+        return NSString(data: payload, encoding: NSUTF8StringEncoding) as? String
+    }
+}
 
 public class MQTTConfig {
     public let clientId: String
@@ -255,26 +266,6 @@ public final class __MosquittoContext : NSObject {
     public var onUnsubscribeCallback: ((messageId: Int) -> ())!
     public var keyfile_passwd: String = ""
     internal override init(){}
-}
-
-public final class MQTTMessage {
-    public let messageId: Int
-    public let topic: String
-    public let payload: NSData
-    public let qos: Int32
-    public let retain: Bool
-
-    public var payloadString: String? {
-        return NSString(data: payload, encoding: NSUTF8StringEncoding) as? String
-    }
-
-    internal init(messageId: Int, topic: String, payload: NSData, qos: Int32, retain: Bool) {
-        self.messageId = messageId
-        self.topic = topic
-        self.payload = payload
-        self.qos = qos
-        self.retain = retain
-    }
 }
 
 public final class MQTT {
