@@ -392,7 +392,7 @@ public final class MQTTClient {
         disconnect()
     }
 
-    public func publish(payload: NSData, topic: String, qos: Int32, retain: Bool, requestCompletion: ((MosqResult, Int) -> ())? = nil) {
+    public func publish(payload: NSData, topic: String, qos: Int32 = 0, retain: Bool = false, requestCompletion: ((MosqResult, Int) -> ())? = nil) {
         serialQueue.addOperationWithBlock {
             if (!self.isFinished) {
                 var messageId: Int32 = 0
@@ -403,7 +403,7 @@ public final class MQTTClient {
         }
     }
 
-    public func publishString(payload: String, topic: String, qos: Int32, retain: Bool, requestCompletion: ((MosqResult, Int) -> ())? = nil) {
+    public func publishString(payload: String, topic: String, qos: Int32 = 0, retain: Bool = false, requestCompletion: ((MosqResult, Int) -> ())? = nil) {
         if let payloadData = (payload as NSString).dataUsingEncoding(NSUTF8StringEncoding) {
             publish(payloadData, topic: topic, qos: qos, retain: retain, requestCompletion: requestCompletion)
         }
