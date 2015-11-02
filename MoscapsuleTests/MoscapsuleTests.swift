@@ -31,6 +31,11 @@ import XCTest
 
 import Moscapsule
 
+
+//
+// These are fragile tests!!
+// I know it's a bad practice but I'm not going to fix it.
+//
 class MoscapsuleTests: XCTestCase {
     
     var initFlag = false
@@ -67,13 +72,32 @@ class MoscapsuleTests: XCTestCase {
         mqttClient.disconnect()
         sleep(2)
         XCTAssertFalse(mqttClient.isConnected)
-        XCTAssertTrue(mqttClient.isFinished)
+    }
+    
+    func testReconnect() {
+        let clientId = "reconnect_test 1234"
+        let mqttConfig = MQTTConfig(clientId: clientId, host: "test.mosquitto.org", port: 1883, keepAlive: 60)
+        let mqttClient = MQTT.newConnection(mqttConfig, connectImmediately: false)
+        XCTAssertFalse(mqttClient.isConnected)
+        // first connecting
+        mqttClient.connectToHost("test.mosquitto.org", port: 1883, keepAlive: 60)
+        sleep(2)
+        XCTAssertTrue(mqttClient.isConnected)
+        // disconnecting
+        mqttClient.disconnect()
+        sleep(2)
+        XCTAssertFalse(mqttClient.isConnected)
+        // reconnecting again
+        mqttClient.reconnect()
+        sleep(2)
+        XCTAssertTrue(mqttClient.isConnected)
     }
     
     func testPublishAndSubscribe() {
         let mqttConfigPub = MQTTConfig(clientId: "pub", host: "test.mosquitto.org", port: 1883, keepAlive: 60)
         var published = false
         let payload = "ほげほげ"
+        let topic = "/moscapsule/testPublishAndSubscribe"
         mqttConfigPub.onPublishCallback = { messageId in
             NSLog("published (mid=\(messageId))")
             published = true
@@ -94,9 +118,9 @@ class MoscapsuleTests: XCTestCase {
         
         let mqttClientPub = MQTT.newConnection(mqttConfigPub)
         let mqttClientSub = MQTT.newConnection(mqttConfigSub)
-        mqttClientSub.subscribe("testTopic", qos: 2)
+        mqttClientSub.subscribe(topic, qos: 2)
         sleep(2)
-        mqttClientPub.publishString(payload, topic: "testTopic", qos: 2, retain: false)
+        mqttClientPub.publishString(payload, topic: topic, qos: 2, retain: false)
         sleep(2)
 
         XCTAssertTrue(published)
@@ -201,11 +225,10 @@ class MoscapsuleTests: XCTestCase {
         //mqttConfig.mqttTlsOpts = MQTTTlsOpts(tls_insecure: true, cert_reqs: .SSL_VERIFY_NONE, tls_version: nil, ciphers: nil)
 
         let mqttClient = MQTT.newConnection(mqttConfig)
-        sleep(25) // so long time needed...
+        sleep(10) // so long time needed...
         XCTAssertTrue(mqttClient.isConnected)
         mqttClient.disconnect()
         sleep(2)
         XCTAssertFalse(mqttClient.isConnected)
-        XCTAssertTrue(mqttClient.isFinished)
     }
 }
