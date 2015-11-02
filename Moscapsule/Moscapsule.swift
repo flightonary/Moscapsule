@@ -364,19 +364,22 @@ public final class MQTTClient {
         queue.maxConcurrentOperationCount = 1
         return queue
     }()
-
+    
+    public private(set) var isRunning: Bool
+    
     public var isConnected: Bool {
         return self.mosquittoContext.isConnected
     }
     
-    private func addRequestToQueue(block: (__MosquittoContext) -> ()) {
+    private func addRequestToQueue(operation: (__MosquittoContext) -> ()) {
         let mosqContext = self.mosquittoContext
-        block(mosqContext)
+        operation(mosqContext)
     }
 
     internal init(mosquittoContext: __MosquittoContext, clientId: String) {
         self.mosquittoContext = mosquittoContext
         self.clientId = clientId
+        self.isRunning = false
     }
     
     deinit {
@@ -417,28 +420,32 @@ public final class MQTTClient {
     }
 
     public func connectToHost(host: String, port: Int32, keepAlive: Int32, requestCompletion: ((MosqResult) -> ())? = nil) {
+        self.isRunning = true
         addRequestToQueue { mosqContext in
             // mosquitto_connect should be call before mosquitto_loop_start.
             let mosqReturn = mosquitto_connect(mosqContext.mosquittoHandler, host, port, keepAlive)
-            requestCompletion?(MosqResult(rawValue: Int(mosqReturn)) ?? MosqResult.MOSQ_UNKNOWN)
             mosquitto_loop_start(mosqContext.mosquittoHandler)
+            requestCompletion?(MosqResult(rawValue: Int(mosqReturn)) ?? MosqResult.MOSQ_UNKNOWN)
         }
     }
 
     public func reconnect(requestCompletion: ((MosqResult) -> ())? = nil) {
+        self.isRunning = true
         addRequestToQueue { mosqContext in
+            // mosquitto_reconnect should be call before mosquitto_loop_start.
             let mosqReturn = mosquitto_reconnect(mosqContext.mosquittoHandler)
-            requestCompletion?(MosqResult(rawValue: Int(mosqReturn)) ?? MosqResult.MOSQ_UNKNOWN)
             mosquitto_loop_start(mosqContext.mosquittoHandler)
+            requestCompletion?(MosqResult(rawValue: Int(mosqReturn)) ?? MosqResult.MOSQ_UNKNOWN)
         }
     }
 
     public func disconnect(requestCompletion: ((MosqResult) -> ())? = nil) {
+        self.isRunning = false
         addRequestToQueue { mosqContext in
             let mosqReturn = mosquitto_disconnect(mosqContext.mosquittoHandler)
-            requestCompletion?(MosqResult(rawValue: Int(mosqReturn)) ?? MosqResult.MOSQ_UNKNOWN)
             // Stopping loop is necessary to reconnect again.
             mosquitto_loop_stop(mosqContext.mosquittoHandler, false)
+            requestCompletion?(MosqResult(rawValue: Int(mosqReturn)) ?? MosqResult.MOSQ_UNKNOWN)
         }
     }
 

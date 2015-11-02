@@ -230,5 +230,29 @@ class MoscapsuleTests: XCTestCase {
         mqttClient.disconnect()
         sleep(2)
         XCTAssertFalse(mqttClient.isConnected)
+        XCTAssertFalse(mqttClient.isRunning)
+    }
+    
+    func testAbnormalOperation() {
+        let clientId = "reconnect_test 1234"
+        let topic = "/moscapsule/testAbnormalOperation"
+        let payload = "payload"
+        let mqttConfig = MQTTConfig(clientId: clientId, host: "test.mosquitto.org", port: 1883, keepAlive: 60)
+        let mqttClient = MQTT.newConnection(mqttConfig, connectImmediately: false)
+        
+        // do pub/sub in no-runnning state
+        mqttClient.subscribe(topic, qos: 2)
+        mqttClient.publishString(payload, topic: topic, qos: 2, retain: false)
+
+        // first connecting
+        mqttClient.connectToHost("test.mosquitto.org", port: 1883, keepAlive: 60)
+        // disconnecting
+        mqttClient.disconnect()
+        sleep(2)
+        XCTAssertFalse(mqttClient.isRunning)
+        
+        // do pub/sub in no-runnning state
+        mqttClient.subscribe(topic, qos: 2)
+        mqttClient.publishString(payload, topic: topic, qos: 2, retain: false)
     }
 }
