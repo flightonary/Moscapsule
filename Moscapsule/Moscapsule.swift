@@ -103,18 +103,6 @@ public struct MQTTReconnOpts {
     public let reconnect_delay_s: UInt32
     public let reconnect_delay_max_s: UInt32
     public let reconnect_exponential_backoff: Bool
-    
-    public init() {
-        self.reconnect_delay_s = 5 //5sec
-        self.reconnect_delay_max_s = 60 * 30 //30min
-        self.reconnect_exponential_backoff = true
-    }
-    
-    public init(reconnect_delay_s: UInt32, reconnect_delay_max_s: UInt32, reconnect_exponential_backoff: Bool) {
-        self.reconnect_delay_s = reconnect_delay_s
-        self.reconnect_delay_max_s = reconnect_delay_max_s
-        self.reconnect_exponential_backoff = reconnect_exponential_backoff
-    }
 }
 
 public struct MQTTWillOpts {
@@ -250,8 +238,8 @@ public final class MQTTConfig {
         self.host = host
         self.port = port
         self.keepAlive = keepAlive
-        cleanSession = true
-        mqttReconnOpts = MQTTReconnOpts()
+        self.cleanSession = true
+        mqttReconnOpts = MQTTReconnOpts(reconnect_delay_s: 1, reconnect_delay_max_s: 60 * 30, reconnect_exponential_backoff: true)
     }
 }
 
