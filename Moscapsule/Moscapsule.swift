@@ -232,9 +232,7 @@ public final class MQTTConfig {
     public var onUnsubscribeCallback: ((messageId: Int) -> ())!
     
     public init(clientId: String, host: String, port: Int32, keepAlive: Int32) {
-        // MQTT client ID is restricted to 23 characters in the MQTT v3.1 spec
-        let restrictedIndex = clientId.startIndex.advancedBy(min(Int(MOSQ_MQTT_ID_MAX_LENGTH), clientId.characters.count))
-        self.clientId = clientId.substringToIndex(restrictedIndex)
+        self.clientId = clientId
         self.host = host
         self.port = port
         self.keepAlive = keepAlive

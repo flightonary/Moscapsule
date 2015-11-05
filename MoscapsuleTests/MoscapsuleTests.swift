@@ -56,7 +56,7 @@ class MoscapsuleTests: XCTestCase {
 
     func testConnectToMQTTServer() {
         let clientId = "connect_test 1234567890abcdef"
-        XCTAssertTrue(clientId.characters.count > Int(MOSQ_MQTT_ID_MAX_LENGTH))
+        //XCTAssertTrue(clientId.characters.count > Int(MOSQ_MQTT_ID_MAX_LENGTH))
         let mqttConfig = MQTTConfig(clientId: clientId, host: "test.mosquitto.org", port: 1883, keepAlive: 60)
         
         mqttConfig.onConnectCallback = { returnCode in
