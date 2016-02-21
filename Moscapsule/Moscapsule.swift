@@ -204,8 +204,10 @@ public struct MQTTMessage {
     public let qos: Int32
     public let retain: Bool
 
+    // If the String version has issues, return the substitutions
     public var payloadString: String? {
-        return NSString(data: payload, encoding: NSUTF8StringEncoding) as? String
+        let (myString,_) = String.fromCStringRepairingIllFormedUTF8(String(payload))
+        return myString
     }
 }
 
@@ -334,10 +336,12 @@ public final class MQTT {
     private class func onMessageAdapter(callback: ((MQTTMessage) -> ())!) -> ((UnsafePointer<mosquitto_message>) -> ())! {
         return callback == nil ? nil : { (rawMessage: UnsafePointer<mosquitto_message>) in
             let message = rawMessage.memory
-            let topic = String.fromCString(message.topic)!
-            let payload = NSData(bytes: message.payload, length: Int(message.payloadlen))
-            let mqttMessage = MQTTMessage(messageId: Int(message.mid), topic: topic, payload: payload, qos: message.qos, retain: message.retain)
-            callback(mqttMessage)
+            // If there are issues with topic string, drop message on the floor
+            if let topic = String.fromCString(message.topic) {
+                let payload = NSData(bytes: message.payload, length: Int(message.payloadlen))
+                let mqttMessage = MQTTMessage(messageId: Int(message.mid), topic: topic, payload: payload, qos: message.qos, retain: message.retain)
+                callback(mqttMessage)
+            }
         }
     }
 
