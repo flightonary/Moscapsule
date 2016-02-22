@@ -204,10 +204,8 @@ public struct MQTTMessage {
     public let qos: Int32
     public let retain: Bool
 
-    // If the String version has issues, return the substitutions
     public var payloadString: String? {
-        let (myString,_) = String.fromCStringRepairingIllFormedUTF8(String(payload))
-        return myString
+        return NSString(data: payload, encoding: NSUTF8StringEncoding) as? String
     }
 }
 
