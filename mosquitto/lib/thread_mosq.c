@@ -89,7 +89,7 @@ void *_mosquitto_thread_main(void *obj)
 
 	if(!mosq->keepalive){
 		/* Sleep for a day if keepalive disabled. */
-		mosquitto_loop_forever(mosq, mosq->keepalive*1000*86400, 1);
+		mosquitto_loop_forever(mosq, 1000*86400, 1);
 	}else{
 		/* Sleep for our keepalive value. publish() etc. will wake us up. */
 		mosquitto_loop_forever(mosq, mosq->keepalive*1000, 1);

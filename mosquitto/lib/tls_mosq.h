@@ -18,6 +18,12 @@ Contributors:
 #define _TLS_MOSQ_H_
 
 #ifdef WITH_TLS
+#  define SSL_DATA_PENDING(A) ((A)->ssl && SSL_pending((A)->ssl))
+#else
+#  define SSL_DATA_PENDING(A) 0
+#endif
+
+#ifdef WITH_TLS
 
 #include <openssl/ssl.h>
 #ifdef WITH_TLS_PSK

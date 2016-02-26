@@ -334,10 +334,12 @@ public final class MQTT {
     private class func onMessageAdapter(callback: ((MQTTMessage) -> ())!) -> ((UnsafePointer<mosquitto_message>) -> ())! {
         return callback == nil ? nil : { (rawMessage: UnsafePointer<mosquitto_message>) in
             let message = rawMessage.memory
-            let topic = String.fromCString(message.topic)!
-            let payload = NSData(bytes: message.payload, length: Int(message.payloadlen))
-            let mqttMessage = MQTTMessage(messageId: Int(message.mid), topic: topic, payload: payload, qos: message.qos, retain: message.retain)
-            callback(mqttMessage)
+            // If there are issues with topic string, drop message on the floor
+            if let topic = String.fromCString(message.topic) {
+                let payload = NSData(bytes: message.payload, length: Int(message.payloadlen))
+                let mqttMessage = MQTTMessage(messageId: Int(message.mid), topic: topic, payload: payload, qos: message.qos, retain: message.retain)
+                callback(mqttMessage)
+            }
         }
     }
 
