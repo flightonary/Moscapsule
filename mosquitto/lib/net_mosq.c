@@ -81,6 +81,8 @@ Contributors:
 #include <time_mosq.h>
 #include <util_mosq.h>
 
+#include "config.h"
+
 #ifdef WITH_TLS
 int tls_ex_index_mosq = -1;
 #endif
@@ -710,6 +712,7 @@ ssize_t _mosquitto_net_write(struct mosquitto *mosq, void *buf, size_t count)
 	errno = 0;
 #ifdef WITH_TLS
 	if(mosq->ssl){
+		mosq->want_write = false;
 		ret = SSL_write(mosq->ssl, buf, count);
 		if(ret < 0){
 			err = SSL_get_error(mosq->ssl, ret);
@@ -1123,10 +1126,6 @@ int _mosquitto_socketpair(mosq_sock_t *pairR, mosq_sock_t *pairW)
 			continue;
 		}
 
-		if(_mosquitto_socket_nonblock(listensock)){
-			continue;
-		}
-
 		if(family[i] == AF_INET){
 			sa->sin_family = family[i];
 			sa->sin_addr.s_addr = htonl(INADDR_LOOPBACK);
@@ -1143,6 +1142,7 @@ int _mosquitto_socketpair(mosq_sock_t *pairR, mosq_sock_t *pairW)
 			continue;
 		}
 		if(_mosquitto_socket_nonblock(spR)){
+			COMPAT_CLOSE(spR);
 			COMPAT_CLOSE(listensock);
 			continue;
 		}
@@ -1170,6 +1170,7 @@ int _mosquitto_socketpair(mosq_sock_t *pairR, mosq_sock_t *pairW)
 
 		if(_mosquitto_socket_nonblock(spW)){
 			COMPAT_CLOSE(spR);
+			COMPAT_CLOSE(spW);
 			COMPAT_CLOSE(listensock);
 			continue;
 		}

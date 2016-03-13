@@ -54,6 +54,9 @@ void *_mosquitto_calloc(size_t nmemb, size_t size)
 void _mosquitto_free(void *mem)
 {
 #ifdef REAL_WITH_MEMORY_TRACKING
+	if(!mem){
+		return;
+	}
 	memcount -= malloc_usable_size(mem);
 #endif
 	free(mem);
