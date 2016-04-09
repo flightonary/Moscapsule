@@ -131,6 +131,35 @@ class MoscapsuleTests: XCTestCase {
         mqttClientSub.disconnect()
     }
     
+    func testPublish() {
+        let mqttConfigPub = MQTTConfig(clientId: "pub", host: "test.mosquitto.org", port: 1883, keepAlive: 60)
+        var published = false
+        let payload = "my message"
+        let topic = "/moscapsule/testPublish"
+        mqttConfigPub.onPublishCallback = { messageId in
+            NSLog("published (mid=\(messageId))")
+            published = true
+        }
+        
+        let mqttClientPub = MQTT.newConnection(mqttConfigPub)
+        mqttClientPub.publishString(payload, topic: topic, qos: 0, retain: false)
+        sleep(2)
+        XCTAssertTrue(published)
+        published = false
+        
+        mqttClientPub.publishString(payload, topic: topic, qos: 1, retain: false)
+        sleep(2)
+        XCTAssertTrue(published)
+        published = false
+        
+        mqttClientPub.publishString(payload, topic: topic, qos: 2, retain: false)
+        sleep(2)
+        XCTAssertTrue(published)
+        published = false
+        
+        mqttClientPub.disconnect()
+    }
+    
     func testUnsubscribe() {
         let mqttConfig = MQTTConfig(clientId: "unsubscribe_test", host: "test.mosquitto.org", port: 1883, keepAlive: 60)
         var subscribed = false
