@@ -53,14 +53,44 @@ public enum ReturnCode: Int {
 
 public enum ReasonCode: Int {
     case Disconnect_Requested = 0
-    case Unexpected = 1
+    case KeepAlive_Timeout = 1
+    
+    // Mosquitto confuses ReasonCode with MosqResult.
+    // It possibly returns MosqResult in _mosquitto_loop_rc_handle.
+    case MOSQ_PROTOCOL = 2
+    case MOSQ_INVAL = 3
+    case MOSQ_NO_CONN = 4
+    case MOSQ_CONN_REFUSED = 5
+    case MOSQ_NOT_FOUND = 6
+    case MOSQ_CONN_LOST = 7
+    case MOSQ_TLS = 8
+    case MOSQ_PAYLOAD_SIZE = 9
+    case MOSQ_NOT_SUPPORTED = 10
+    case MOSQ_AUTH = 11
+    case MOSQ_ACL_DENIED = 12
+    case MOSQ_UNKNOWN = 13
+    case MOSQ_ERRNO = 14
+    case MOSQ_EAI = 15
+    case MOSQ_ERR_PROXY = 16
+
+    case Unknown = 256
 
     public var description: String {
         switch self {
         case .Disconnect_Requested:
             return "Disconnect_Requested"
-        case .Unexpected:
-            return "Unexpected"
+        case .KeepAlive_Timeout:
+            return "KeepAlive_Timeout"
+        case .MOSQ_NO_CONN:
+            return "MOSQ_NO_CONN"
+        case .MOSQ_CONN_LOST:
+            return "MOSQ_CONN_LOST"
+        case .MOSQ_ERRNO:
+            return "MOSQ_ERRNO"
+        case .Unknown:
+            return "Unknown"
+        default:
+            return self.rawValue.description
         }
     }
 }
@@ -83,6 +113,7 @@ public enum MosqResult: Int {
     case MOSQ_UNKNOWN = 13
     case MOSQ_ERRNO = 14
     case MOSQ_EAI = 15
+    case MOSQ_ERR_PROXY = 16
 }
 
 public struct Qos {
@@ -327,7 +358,7 @@ public final class MQTT {
 
     private class func onDisconnectAdapter(callback: ((ReasonCode) -> ())!) -> ((reasonCode: Int) -> ())! {
         return callback == nil ? nil : { (rawReasonCode: Int) in
-            callback(ReasonCode(rawValue: rawReasonCode) ?? ReasonCode.Unexpected)
+            callback(ReasonCode(rawValue: rawReasonCode) ?? ReasonCode.Unknown)
         }
     }
 
@@ -358,13 +389,7 @@ public final class MQTT {
 public final class MQTTClient {
     public let clientId: String
     private let mosquittoContext: __MosquittoContext
-    private let serialQueue: NSOperationQueue = {
-        let queue = NSOperationQueue()
-        queue.name = "MQTT Client Operation Queue"
-        queue.maxConcurrentOperationCount = 1
-        return queue
-    }()
-    
+    private let serialQueue: NSOperationQueue
     public private(set) var isRunning: Bool
     
     public var isConnected: Bool {
@@ -380,6 +405,9 @@ public final class MQTTClient {
         self.mosquittoContext = mosquittoContext
         self.clientId = clientId
         self.isRunning = false
+        self.serialQueue = NSOperationQueue()
+        self.serialQueue.name = String(format: "MQTT Client Operation Queue (%s)", clientId)
+        self.serialQueue.maxConcurrentOperationCount = 1
     }
     
     deinit {
@@ -443,7 +471,6 @@ public final class MQTTClient {
         self.isRunning = false
         addRequestToQueue { mosqContext in
             let mosqReturn = mosquitto_disconnect(mosqContext.mosquittoHandler)
-            // Stopping loop is necessary to reconnect again.
             mosquitto_loop_stop(mosqContext.mosquittoHandler, false)
             requestCompletion?(MosqResult(rawValue: Int(mosqReturn)) ?? MosqResult.MOSQ_UNKNOWN)
         }

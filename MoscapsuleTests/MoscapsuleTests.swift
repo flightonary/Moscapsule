@@ -93,6 +93,21 @@ class MoscapsuleTests: XCTestCase {
         XCTAssertTrue(mqttClient.isConnected)
     }
     
+    func testReconnectInRunning() {
+        let clientId = "reconnect_test"
+        let mqttConfig = MQTTConfig(clientId: clientId, host: "test.mosquitto.org", port: 1883, keepAlive: 60)
+        let mqttClient = MQTT.newConnection(mqttConfig, connectImmediately: false)
+        
+        // first connecting
+        mqttClient.connectToHost("test.mosquitto.org", port: 1883, keepAlive: 60)
+        sleep(2)
+        XCTAssertTrue(mqttClient.isConnected)
+        // reconnecting again
+        mqttClient.reconnect()
+        sleep(2)
+        XCTAssertTrue(mqttClient.isConnected)
+    }
+    
     func testPublishAndSubscribe() {
         let mqttConfigPub = MQTTConfig(clientId: "pub", host: "test.mosquitto.org", port: 1883, keepAlive: 60)
         var published = false
