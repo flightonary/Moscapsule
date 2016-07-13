@@ -484,6 +484,8 @@ public final class MQTTClient {
     }
 
     public func disconnect(requestCompletion: ((MosqResult) -> ())? = nil) {
+        guard isConnected == true else { return }
+        
         self.isRunning = false
         addRequestToQueue { mosqContext in
             let mosqReturn = mosquitto_disconnect(mosqContext.mosquittoHandler)
