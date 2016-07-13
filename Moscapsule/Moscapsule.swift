@@ -134,6 +134,22 @@ public struct MQTTReconnOpts {
     public let reconnect_delay_s: UInt32
     public let reconnect_delay_max_s: UInt32
     public let reconnect_exponential_backoff: Bool
+    
+    public static func disabledReconn() -> MQTTReconnOpts {
+        return MQTTReconnOpts(delay: UInt32.max, max: UInt32.max, backoff: false)
+    }
+    
+    public init(delay: UInt32, max: UInt32, backoff: Bool) {
+        reconnect_delay_max_s = max
+        reconnect_exponential_backoff = backoff
+        reconnect_delay_s = delay
+    }
+    
+    internal init(reconnect_delay_s: UInt32, reconnect_delay_max_s: UInt32, reconnect_exponential_backoff: Bool) {
+        self.reconnect_delay_s = reconnect_delay_s
+        self.reconnect_delay_max_s = reconnect_delay_max_s
+        self.reconnect_exponential_backoff = reconnect_exponential_backoff
+    }
 }
 
 public struct MQTTWillOpts {
