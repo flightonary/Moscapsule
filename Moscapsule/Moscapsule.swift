@@ -252,7 +252,13 @@ public struct MQTTMessage {
     public let retain: Bool
 
     public var payloadString: String? {
-        return NSString(data: payload, encoding: NSUTF8StringEncoding) as? String
+        if let utf8String = String(data: payload, encoding: NSUTF8StringEncoding) {
+            return utf8String
+        } else if let asciiString = String(data: payload, encoding: NSASCIIStringEncoding) {
+            return asciiString
+        } else {
+            return nil
+        }
     }
 }
 
