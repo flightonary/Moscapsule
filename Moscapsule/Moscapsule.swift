@@ -252,7 +252,16 @@ public struct MQTTMessage {
     public let retain: Bool
 
     public var payloadString: String? {
-        let encodingsToTry = [NSUTF8StringEncoding, NSASCIIStringEncoding]
+        let encodingsToTry = [
+            NSUTF8StringEncoding, NSASCIIStringEncoding, NSUTF16StringEncoding, NSUTF16BigEndianStringEncoding,
+            NSUTF16LittleEndianStringEncoding, NSUTF32StringEncoding, NSUTF32BigEndianStringEncoding,
+            NSUTF32LittleEndianStringEncoding, NSNEXTSTEPStringEncoding, NSJapaneseEUCStringEncoding,
+            NSISOLatin1StringEncoding, NSSymbolStringEncoding, NSNonLossyASCIIStringEncoding, NSShiftJISStringEncoding,
+            NSISOLatin2StringEncoding, NSUnicodeStringEncoding, NSWindowsCP1251StringEncoding, NSWindowsCP1252StringEncoding,
+            NSWindowsCP1253StringEncoding, NSWindowsCP1254StringEncoding, NSWindowsCP1250StringEncoding,
+            NSISO2022JPStringEncoding, NSMacOSRomanStringEncoding
+        ]
+        
         for encoding in encodingsToTry {
             if let string = String(data: payload, encoding: encoding) {
                 return string
