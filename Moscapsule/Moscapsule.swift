@@ -250,6 +250,14 @@ public struct MQTTMessage {
     public let payload: NSData
     public let qos: Int32
     public let retain: Bool
+    
+    public init(messageId: Int, topic: String, payload: NSData, qos: Int32, retain: Bool) {
+        self.messageId = messageId
+        self.topic = topic
+        self.payload = payload
+        self.qos = qos
+        self.retain = retain
+    }
 
     public var payloadString: String? {
         let encodingsToTry = [
