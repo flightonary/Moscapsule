@@ -438,7 +438,9 @@ public final class MQTTClient {
     
     private func addRequestToQueue(operation: (__MosquittoContext) -> ()) {
         let mosqContext = self.mosquittoContext
-        operation(mosqContext)
+        serialQueue.addOperationWithBlock {
+            operation(mosqContext)
+        }
     }
 
     internal init(mosquittoContext: __MosquittoContext, clientId: String) {
@@ -508,7 +510,7 @@ public final class MQTTClient {
     }
 
     public func disconnect(requestCompletion: ((MosqResult) -> ())? = nil) {
-        guard isConnected == true else { return }
+        guard isRunning == true else { return }
         
         self.isRunning = false
         addRequestToQueue { mosqContext in
