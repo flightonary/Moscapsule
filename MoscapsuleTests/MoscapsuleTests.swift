@@ -80,16 +80,16 @@ class MoscapsuleTests: XCTestCase {
         let mqttClient = MQTT.newConnection(mqttConfig, connectImmediately: false)
         XCTAssertFalse(mqttClient.isConnected)
         // first connecting
-        mqttClient.connectToHost("test.mosquitto.org", port: 1883, keepAlive: 60)
-        sleep(2)
+        mqttClient.connectTo(host: "test.mosquitto.org", port: 1883, keepAlive: 60)
+        sleep(5)
         XCTAssertTrue(mqttClient.isConnected)
         // disconnecting
         mqttClient.disconnect()
-        sleep(2)
+        sleep(5)
         XCTAssertFalse(mqttClient.isConnected)
         // reconnecting again
         mqttClient.reconnect()
-        sleep(2)
+        sleep(5)
         XCTAssertTrue(mqttClient.isConnected)
     }
     
@@ -99,12 +99,12 @@ class MoscapsuleTests: XCTestCase {
         let mqttClient = MQTT.newConnection(mqttConfig, connectImmediately: false)
         
         // first connecting
-        mqttClient.connectToHost("test.mosquitto.org", port: 1883, keepAlive: 60)
-        sleep(2)
+        mqttClient.connectTo(host: "test.mosquitto.org", port: 1883, keepAlive: 60)
+        sleep(5)
         XCTAssertTrue(mqttClient.isConnected)
         // reconnecting again
         mqttClient.reconnect()
-        sleep(2)
+        sleep(5)
         XCTAssertTrue(mqttClient.isConnected)
     }
     
@@ -135,7 +135,7 @@ class MoscapsuleTests: XCTestCase {
         let mqttClientSub = MQTT.newConnection(mqttConfigSub)
         mqttClientSub.subscribe(topic, qos: 2)
         sleep(2)
-        mqttClientPub.publishString(payload, topic: topic, qos: 2, retain: false)
+        mqttClientPub.publish(string: payload, topic: topic, qos: 2, retain: false)
         sleep(2)
 
         XCTAssertTrue(published)
@@ -157,17 +157,17 @@ class MoscapsuleTests: XCTestCase {
         }
         
         let mqttClientPub = MQTT.newConnection(mqttConfigPub)
-        mqttClientPub.publishString(payload, topic: topic, qos: 0, retain: false)
+        mqttClientPub.publish(string: payload, topic: topic, qos: 0, retain: false)
         sleep(2)
         XCTAssertTrue(published)
         published = false
         
-        mqttClientPub.publishString(payload, topic: topic, qos: 1, retain: false)
+        mqttClientPub.publish(string: payload, topic: topic, qos: 1, retain: false)
         sleep(2)
         XCTAssertTrue(published)
         published = false
         
-        mqttClientPub.publishString(payload, topic: topic, qos: 2, retain: false)
+        mqttClientPub.publish(string: payload, topic: topic, qos: 2, retain: false)
         sleep(2)
         XCTAssertTrue(published)
         published = false
@@ -231,7 +231,7 @@ class MoscapsuleTests: XCTestCase {
         var unsubscribed = false
 
         let mqttClient = MQTT.newConnection(mqttConfig)
-        mqttClient.publishString("msg", topic: "topic", qos: 2, retain: false) { mosqReturn, messageId in
+        mqttClient.publish(string: "msg", topic: "topic", qos: 2, retain: false) { mosqReturn, messageId in
             published = true
             NSLog("publish completion: mosq_return=\(mosqReturn.rawValue) messageId=\(messageId)")
         }
@@ -286,10 +286,10 @@ class MoscapsuleTests: XCTestCase {
         
         // do pub/sub in no-runnning state
         mqttClient.subscribe(topic, qos: 2)
-        mqttClient.publishString(payload, topic: topic, qos: 2, retain: false)
+        mqttClient.publish(string: payload, topic: topic, qos: 2, retain: false)
 
         // first connecting
-        mqttClient.connectToHost("test.mosquitto.org", port: 1883, keepAlive: 60)
+        mqttClient.connectTo(host: "test.mosquitto.org", port: 1883, keepAlive: 60)
         // disconnecting
         mqttClient.disconnect()
         sleep(2)
@@ -297,6 +297,6 @@ class MoscapsuleTests: XCTestCase {
         
         // do pub/sub in no-runnning state
         mqttClient.subscribe(topic, qos: 2)
-        mqttClient.publishString(payload, topic: topic, qos: 2, retain: false)
+        mqttClient.publish(string: payload, topic: topic, qos: 2, retain: false)
     }
 }
