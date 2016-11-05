@@ -25,69 +25,68 @@
 //    IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 //    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
-
 import Foundation
 
 public enum ReturnCode: Int {
-    case Success = 0
-    case Unacceptable_Protocol_Version = 1
-    case Identifier_Rejected = 2
-    case Broker_Unavailable = 3
-    case Unknown = 256
-
+    case success = 0
+    case unacceptable_protocol_version = 1
+    case identifier_rejected = 2
+    case broker_unavailable = 3
+    case unknown = 256
+    
     public var description: String {
         switch self {
-        case .Success:
+        case .success:
             return "Success"
-        case .Unacceptable_Protocol_Version:
+        case .unacceptable_protocol_version:
             return "Unacceptable_Protocol_Version"
-        case .Identifier_Rejected:
+        case .identifier_rejected:
             return "Identifier_Rejected"
-        case .Broker_Unavailable:
+        case .broker_unavailable:
             return "Broker_Unavailable"
-        case .Unknown:
+        case .unknown:
             return "Unknown"
         }
     }
 }
 
 public enum ReasonCode: Int {
-    case Disconnect_Requested = 0
-    case KeepAlive_Timeout = 1
+    case disconnect_requested = 0
+    case keepAlive_timeout = 1
     
     // Mosquitto confuses ReasonCode with MosqResult.
     // It possibly returns MosqResult in _mosquitto_loop_rc_handle.
-    case MOSQ_PROTOCOL = 2
-    case MOSQ_INVAL = 3
-    case MOSQ_NO_CONN = 4
-    case MOSQ_CONN_REFUSED = 5
-    case MOSQ_NOT_FOUND = 6
-    case MOSQ_CONN_LOST = 7
-    case MOSQ_TLS = 8
-    case MOSQ_PAYLOAD_SIZE = 9
-    case MOSQ_NOT_SUPPORTED = 10
-    case MOSQ_AUTH = 11
-    case MOSQ_ACL_DENIED = 12
-    case MOSQ_UNKNOWN = 13
-    case MOSQ_ERRNO = 14
-    case MOSQ_EAI = 15
-    case MOSQ_ERR_PROXY = 16
-
-    case Unknown = 256
-
+    case mosq_protocol = 2
+    case mosq_inval = 3
+    case mosq_no_conn = 4
+    case mosq_conn_refused = 5
+    case mosq_not_found = 6
+    case mosq_conn_lost = 7
+    case mosq_tls = 8
+    case mosq_payload_size = 9
+    case mosq_not_supported = 10
+    case mosq_auth = 11
+    case mosq_acl_denied = 12
+    case mosq_unknown = 13
+    case mosq_errno = 14
+    case mosq_eai = 15
+    case mosq_err_proxy = 16
+    
+    case unknown = 256
+    
     public var description: String {
         switch self {
-        case .Disconnect_Requested:
+        case .disconnect_requested:
             return "Disconnect_Requested"
-        case .KeepAlive_Timeout:
+        case .keepAlive_timeout:
             return "KeepAlive_Timeout"
-        case .MOSQ_NO_CONN:
+        case .mosq_no_conn:
             return "MOSQ_NO_CONN"
-        case .MOSQ_CONN_LOST:
+        case .mosq_conn_lost:
             return "MOSQ_CONN_LOST"
-        case .MOSQ_ERRNO:
+        case .mosq_errno:
             return "MOSQ_ERRNO"
-        case .Unknown:
+        case .unknown:
             return "Unknown"
         default:
             return self.rawValue.description
@@ -96,30 +95,30 @@ public enum ReasonCode: Int {
 }
 
 public enum MosqResult: Int {
-    case MOSQ_CONN_PENDING = -1
-    case MOSQ_SUCCESS = 0
-    case MOSQ_NOMEM = 1
-    case MOSQ_PROTOCOL = 2
-    case MOSQ_INVAL = 3
-    case MOSQ_NO_CONN = 4
-    case MOSQ_CONN_REFUSED = 5
-    case MOSQ_NOT_FOUND = 6
-    case MOSQ_CONN_LOST = 7
-    case MOSQ_TLS = 8
-    case MOSQ_PAYLOAD_SIZE = 9
-    case MOSQ_NOT_SUPPORTED = 10
-    case MOSQ_AUTH = 11
-    case MOSQ_ACL_DENIED = 12
-    case MOSQ_UNKNOWN = 13
-    case MOSQ_ERRNO = 14
-    case MOSQ_EAI = 15
-    case MOSQ_ERR_PROXY = 16
+    case mosq_conn_pending = -1
+    case mosq_success = 0
+    case mosq_nomem = 1
+    case mosq_protocol = 2
+    case mosq_inval = 3
+    case mosq_no_conn = 4
+    case mosq_conn_refused = 5
+    case mosq_not_found = 6
+    case mosq_conn_lost = 7
+    case mosq_tls = 8
+    case mosq_payload_size = 9
+    case mosq_not_supported = 10
+    case mosq_auth = 11
+    case mosq_acl_denied = 12
+    case mosq_unknown = 13
+    case mosq_errno = 14
+    case mosq_eai = 15
+    case mosq_err_proxy = 16
 }
 
 public struct Qos {
-    public static let At_Most_Once: Int32  = 0  // Fire and Forget, i.e. <=1
-    public static let At_Least_Once: Int32 = 1  // Acknowledged delivery, i.e. >=1
-    public static let Exactly_Once: Int32  = 2  // Assured delivery, i.e. =1
+    public static let at_most_once: Int32  = 0  // Fire and Forget, i.e. <=1
+    public static let at_least_once: Int32 = 1  // Acknowledged delivery, i.e. >=1
+    public static let exactly_once: Int32  = 2  // Assured delivery, i.e. =1
 }
 
 public func moscapsule_init() {
@@ -154,19 +153,19 @@ public struct MQTTReconnOpts {
 
 public struct MQTTWillOpts {
     public let topic: String
-    public let payload: NSData
+    public let payload: Data
     public let qos: Int32
     public let retain: Bool
     
-    public init(topic: String, payload: NSData, qos: Int32, retain: Bool) {
+    public init(topic: String, payload: Data, qos: Int32, retain: Bool) {
         self.topic = topic
         self.payload = payload
         self.qos = qos
         self.retain = retain
     }
-
+    
     public init(topic: String, payload: String, qos: Int32, retain: Bool) {
-        let rawPayload = payload.dataUsingEncoding(NSUTF8StringEncoding)!
+        let rawPayload = payload.data(using: .utf8)!
         self.init(topic: topic, payload: rawPayload, qos: qos, retain: retain)
     }
 }
@@ -174,7 +173,7 @@ public struct MQTTWillOpts {
 public struct MQTTAuthOpts {
     public let username: String
     public let password: String
-
+    
     public init(username: String, password: String) {
         self.username = username
         self.password = password
@@ -214,8 +213,8 @@ public struct MQTTClientCert {
 }
 
 public enum CertReqs: Int32 {
-    case SSL_VERIFY_NONE = 0
-    case SSL_VERIFY_PEER = 1
+    case ssl_verify_none = 0
+    case ssl_verify_peer = 1
 }
 
 public struct MQTTTlsOpts {
@@ -247,27 +246,27 @@ public struct MQTTPsk {
 public struct MQTTMessage {
     public let messageId: Int
     public let topic: String
-    public let payload: NSData
+    public let payload: Data
     public let qos: Int32
     public let retain: Bool
     
-    public init(messageId: Int, topic: String, payload: NSData, qos: Int32, retain: Bool) {
+    public init(messageId: Int, topic: String, payload: Data, qos: Int32, retain: Bool) {
         self.messageId = messageId
         self.topic = topic
         self.payload = payload
         self.qos = qos
         self.retain = retain
     }
-
+    
     public var payloadString: String? {
-        let encodingsToTry = [
-            NSUTF8StringEncoding, NSASCIIStringEncoding, NSUTF16StringEncoding, NSUTF16BigEndianStringEncoding,
-            NSUTF16LittleEndianStringEncoding, NSUTF32StringEncoding, NSUTF32BigEndianStringEncoding,
-            NSUTF32LittleEndianStringEncoding, NSNEXTSTEPStringEncoding, NSJapaneseEUCStringEncoding,
-            NSISOLatin1StringEncoding, NSSymbolStringEncoding, NSNonLossyASCIIStringEncoding, NSShiftJISStringEncoding,
-            NSISOLatin2StringEncoding, NSUnicodeStringEncoding, NSWindowsCP1251StringEncoding, NSWindowsCP1252StringEncoding,
-            NSWindowsCP1253StringEncoding, NSWindowsCP1254StringEncoding, NSWindowsCP1250StringEncoding,
-            NSISO2022JPStringEncoding, NSMacOSRomanStringEncoding
+        let encodingsToTry: [String.Encoding] = [
+            .utf8, .ascii, .utf16, .utf16BigEndian,
+            .utf16LittleEndian, .utf32, .utf32BigEndian,
+            .utf32LittleEndian, .nextstep, .japaneseEUC,
+            .isoLatin1, .symbol, .nonLossyASCII, .shiftJIS,
+            .isoLatin2, .unicode, .windowsCP1250, .windowsCP1251,
+            .windowsCP1252, .windowsCP1253, .windowsCP1254,
+            .iso2022JP, .macOSRoman
         ]
         
         for encoding in encodingsToTry {
@@ -294,13 +293,13 @@ public final class MQTTConfig {
     public var mqttClientCert: MQTTClientCert?
     public var mqttTlsOpts: MQTTTlsOpts?
     public var mqttPsk: MQTTPsk?
-
-    public var onConnectCallback: ((returnCode: ReturnCode) -> ())!
-    public var onDisconnectCallback: ((reasonCode: ReasonCode) -> ())!
-    public var onPublishCallback: ((messageId: Int) -> ())!
-    public var onMessageCallback: ((mqttMessage: MQTTMessage) -> ())!
-    public var onSubscribeCallback: ((messageId: Int, grantedQos: Array<Int32>) -> ())!
-    public var onUnsubscribeCallback: ((messageId: Int) -> ())!
+    
+    public var onConnectCallback: ((_ returnCode: ReturnCode) -> ())!
+    public var onDisconnectCallback: ((_ reasonCode: ReasonCode) -> ())!
+    public var onPublishCallback: ((_ messageId: Int) -> ())!
+    public var onMessageCallback: ((_ mqttMessage: MQTTMessage) -> ())!
+    public var onSubscribeCallback: ((_ messageId: Int, _ grantedQos: Array<Int32>) -> ())!
+    public var onUnsubscribeCallback: ((_ messageId: Int) -> ())!
     
     public init(clientId: String, host: String, port: Int32, keepAlive: Int32) {
         self.clientId = clientId
@@ -313,20 +312,20 @@ public final class MQTTConfig {
 }
 
 public final class __MosquittoContext : NSObject {
-    public var mosquittoHandler: COpaquePointer = nil
+    public var mosquittoHandler: OpaquePointer? = nil
     public var isConnected: Bool = false
-    public var onConnectCallback: ((returnCode: Int) -> ())!
-    public var onDisconnectCallback: ((reasonCode: Int) -> ())!
-    public var onPublishCallback: ((messageId: Int) -> ())!
-    public var onMessageCallback: ((message: UnsafePointer<mosquitto_message>) -> ())!
-    public var onSubscribeCallback: ((messageId: Int, qosCount: Int, grantedQos: UnsafePointer<Int32>) -> ())!
-    public var onUnsubscribeCallback: ((messageId: Int) -> ())!
+    public var onConnectCallback: ((_ returnCode: Int) -> ())!
+    public var onDisconnectCallback: ((_ reasonCode: Int) -> ())!
+    public var onPublishCallback: ((_ messageId: Int) -> ())!
+    public var onMessageCallback: ((_ message: UnsafePointer<mosquitto_message>) -> ())!
+    public var onSubscribeCallback: ((_ messageId: Int, _ qosCount: Int, _ grantedQos: UnsafePointer<Int32>) -> ())!
+    public var onUnsubscribeCallback: ((_ messageId: Int) -> ())!
     public var keyfile_passwd: String = ""
     internal override init(){}
 }
 
 public final class MQTT {
-    public class func newConnection(mqttConfig: MQTTConfig, connectImmediately: Bool = true) -> MQTTClient {
+    public class func newConnection(_ mqttConfig: MQTTConfig, connectImmediately: Bool = true) -> MQTTClient {
         let mosquittoContext = __MosquittoContext()
         mosquittoContext.onConnectCallback = onConnectAdapter(mqttConfig.onConnectCallback)
         mosquittoContext.onDisconnectCallback = onDisconnectAdapter(mqttConfig.onDisconnectCallback)
@@ -334,21 +333,23 @@ public final class MQTT {
         mosquittoContext.onMessageCallback = onMessageAdapter(mqttConfig.onMessageCallback)
         mosquittoContext.onSubscribeCallback = onSubscribeAdapter(mqttConfig.onSubscribeCallback)
         mosquittoContext.onUnsubscribeCallback = mqttConfig.onUnsubscribeCallback
-
+        
         // setup mosquittoHandler
         mosquitto_context_setup(mqttConfig.clientId.cCharArray, mqttConfig.cleanSession, mosquittoContext)
-
+        
         // set MQTT Reconnection Options
         mosquitto_reconnect_delay_set(mosquittoContext.mosquittoHandler,
                                       mqttConfig.mqttReconnOpts.reconnect_delay_s,
                                       mqttConfig.mqttReconnOpts.reconnect_delay_max_s,
                                       mqttConfig.mqttReconnOpts.reconnect_exponential_backoff)
-
+        
         // set MQTT Will Options
         if let mqttWillOpts = mqttConfig.mqttWillOpts {
-            mosquitto_will_set(mosquittoContext.mosquittoHandler, mqttWillOpts.topic.cCharArray,
-                               Int32(mqttWillOpts.payload.length), mqttWillOpts.payload.bytes,
-                               mqttWillOpts.qos, mqttWillOpts.retain)
+            mqttWillOpts.payload.withUnsafeBytes {
+                mosquitto_will_set(mosquittoContext.mosquittoHandler, mqttWillOpts.topic.cCharArray,
+                                   Int32(mqttWillOpts.payload.count), $0,
+                                   mqttWillOpts.qos, mqttWillOpts.retain)
+            }
         }
         
         // set MQTT Authentication Options
@@ -361,7 +362,7 @@ public final class MQTT {
             mosquitto_max_inflight_messages_set(mosquittoContext.mosquittoHandler, mqttPublishOpts.max_inflight_messages)
             mosquitto_message_retry_set(mosquittoContext.mosquittoHandler, mqttPublishOpts.message_retry)
         }
-
+        
         // set Server/Client Certificate
         if mqttConfig.mqttServerCert != nil || mqttConfig.mqttClientCert != nil {
             let sc = mqttConfig.mqttServerCert
@@ -369,56 +370,55 @@ public final class MQTT {
             mosquittoContext.keyfile_passwd = cc?.keyfile_passwd ?? ""
             mosquitto_tls_set_bridge(sc?.cafile, sc?.capath, cc?.certfile, cc?.keyfile, mosquittoContext)
         }
-
+        
         // set TLS Options
         if let mqttTlsOpts = mqttConfig.mqttTlsOpts {
             mosquitto_tls_insecure_set(mosquittoContext.mosquittoHandler, mqttTlsOpts.tls_insecure)
             mosquitto_tls_opts_set_bridge(mqttTlsOpts.cert_reqs.rawValue, mqttTlsOpts.tls_version, mqttTlsOpts.ciphers, mosquittoContext)
         }
-
+        
         // set PSK
         if let mqttPsk = mqttConfig.mqttPsk {
             mosquitto_tls_psk_set_bridge(mqttPsk.psk, mqttPsk.identity, mqttPsk.ciphers, mosquittoContext)
         }
-
+        
         // start MQTTClient
         let mqttClient = MQTTClient(mosquittoContext: mosquittoContext, clientId: mqttConfig.clientId)
         if connectImmediately {
-            mqttClient.connectToHost(mqttConfig.host, port: mqttConfig.port, keepAlive: mqttConfig.keepAlive)
+            mqttClient.connectTo(host: mqttConfig.host, port: mqttConfig.port, keepAlive: mqttConfig.keepAlive)
         }
-
+        
         return mqttClient
     }
-
-    private class func onConnectAdapter(callback: ((ReturnCode) -> ())!) -> ((returnCode: Int) -> ())! {
+    
+    private class func onConnectAdapter(_ callback: ((ReturnCode) -> ())!) -> ((_ returnCode: Int) -> ())! {
         return callback == nil ? nil : { (rawReturnCode: Int) in
-            callback(ReturnCode(rawValue: rawReturnCode) ?? ReturnCode.Unknown)
+            callback(ReturnCode(rawValue: rawReturnCode) ?? ReturnCode.unknown)
         }
     }
-
-    private class func onDisconnectAdapter(callback: ((ReasonCode) -> ())!) -> ((reasonCode: Int) -> ())! {
+    
+    private class func onDisconnectAdapter(_ callback: ((ReasonCode) -> ())!) -> ((_ reasonCode: Int) -> ())! {
         return callback == nil ? nil : { (rawReasonCode: Int) in
-            callback(ReasonCode(rawValue: rawReasonCode) ?? ReasonCode.Unknown)
+            callback(ReasonCode(rawValue: rawReasonCode) ?? ReasonCode.unknown)
         }
     }
-
-    private class func onMessageAdapter(callback: ((MQTTMessage) -> ())!) -> ((UnsafePointer<mosquitto_message>) -> ())! {
+    
+    private class func onMessageAdapter(_ callback: ((MQTTMessage) -> ())!) -> ((UnsafePointer<mosquitto_message>) -> ())! {
         return callback == nil ? nil : { (rawMessage: UnsafePointer<mosquitto_message>) in
-            let message = rawMessage.memory
+            let message = rawMessage.pointee
             // If there are issues with topic string, drop message on the floor
-            if let topic = String.fromCString(message.topic) {
-                let payload = NSData(bytes: message.payload, length: Int(message.payloadlen))
-                let mqttMessage = MQTTMessage(messageId: Int(message.mid), topic: topic, payload: payload, qos: message.qos, retain: message.retain)
-                callback(mqttMessage)
-            }
+            let topic = String(cString: message.topic)
+            let payload = Data(bytes: message.payload, count: Int(message.payloadlen))
+            let mqttMessage = MQTTMessage(messageId: Int(message.mid), topic: topic, payload: payload, qos: message.qos, retain: message.retain)
+            callback(mqttMessage)
         }
     }
-
-    private class func onSubscribeAdapter(callback: ((Int, Array<Int32>) -> ())!) -> ((Int, Int, UnsafePointer<Int32>) -> ())! {
+    
+    private class func onSubscribeAdapter(_ callback: ((Int, Array<Int32>) -> ())!) -> ((Int, Int, UnsafePointer<Int32>) -> ())! {
         return callback == nil ? nil : { (messageId: Int, qosCount: Int, grantedQos: UnsafePointer<Int32>) in
-            var grantedQosList = [Int32](count: qosCount, repeatedValue: Qos.At_Least_Once)
+            var grantedQosList = [Int32](repeating: Qos.at_least_once, count: qosCount)
             let _ = Array(0..<qosCount).reduce(grantedQos) { (qosPointer, index) in
-                grantedQosList[index] = qosPointer.memory
+                grantedQosList[index] = qosPointer.pointee
                 return qosPointer.successor()
             }
             callback(messageId, grantedQosList)
@@ -429,26 +429,26 @@ public final class MQTT {
 public final class MQTTClient {
     public let clientId: String
     private let mosquittoContext: __MosquittoContext
-    private let serialQueue: NSOperationQueue
+    private let serialQueue: OperationQueue
     public private(set) var isRunning: Bool
     
     public var isConnected: Bool {
         return self.mosquittoContext.isConnected
     }
     
-    private func addRequestToQueue(operation: (__MosquittoContext) -> ()) {
+    private func addRequestToQueue(operation: @escaping (__MosquittoContext) -> ()) {
         let mosqContext = self.mosquittoContext
-        serialQueue.addOperationWithBlock {
+        serialQueue.addOperation {
             operation(mosqContext)
         }
     }
-
+    
     internal init(mosquittoContext: __MosquittoContext, clientId: String) {
         self.mosquittoContext = mosquittoContext
         self.clientId = clientId
         self.isRunning = false
-        self.serialQueue = NSOperationQueue()
-        self.serialQueue.name = String(format: "MQTT Client Operation Queue (%s)", clientId)
+        self.serialQueue = OperationQueue()
+        self.serialQueue.name = "MQTT Client Operation Queue (\(clientId))"
         self.serialQueue.maxConcurrentOperationCount = 1
     }
     
@@ -458,72 +458,73 @@ public final class MQTTClient {
             mosquitto_context_cleanup(mosqContext)
         }
     }
-
-    public func publish(payload: NSData, topic: String, qos: Int32, retain: Bool, requestCompletion: ((MosqResult, Int) -> ())? = nil) {
+    
+    public func publish(_ payload: Data, topic: String, qos: Int32, retain: Bool, requestCompletion: ((MosqResult, Int) -> ())? = nil) {
         addRequestToQueue { mosqContext in
             var messageId: Int32 = 0
-            let mosqReturn = mosquitto_publish(mosqContext.mosquittoHandler, &messageId, topic.cCharArray, Int32(payload.length), payload.bytes, qos, retain)
-            requestCompletion?(MosqResult(rawValue: Int(mosqReturn)) ?? MosqResult.MOSQ_UNKNOWN, Int(messageId))
+            let bytes = Array(payload)
+            let mosqReturn = mosquitto_publish(mosqContext.mosquittoHandler, &messageId, topic.cCharArray, Int32(payload.count), bytes, qos, retain)
+            requestCompletion?(MosqResult(rawValue: Int(mosqReturn)) ?? MosqResult.mosq_unknown, Int(messageId))
         }
     }
-
-    public func publishString(payload: String, topic: String, qos: Int32, retain: Bool, requestCompletion: ((MosqResult, Int) -> ())? = nil) {
-        if let payloadData = (payload as NSString).dataUsingEncoding(NSUTF8StringEncoding) {
+    
+    public func publish(string payload: String, topic: String, qos: Int32, retain: Bool, requestCompletion: ((MosqResult, Int) -> ())? = nil) {
+        if let payloadData = payload.data(using: .utf8) {
             publish(payloadData, topic: topic, qos: qos, retain: retain, requestCompletion: requestCompletion)
         }
     }
-
-    public func subscribe(topic: String, qos: Int32, requestCompletion: ((MosqResult, Int) -> ())? = nil) {
+    
+    public func subscribe(_ topic: String, qos: Int32, requestCompletion: ((MosqResult, Int) -> ())? = nil) {
         addRequestToQueue { mosqContext in
             var messageId: Int32 = 0
             let mosqReturn = mosquitto_subscribe(mosqContext.mosquittoHandler, &messageId, topic.cCharArray, qos)
-            requestCompletion?(MosqResult(rawValue: Int(mosqReturn)) ?? MosqResult.MOSQ_UNKNOWN, Int(messageId))
+            requestCompletion?(MosqResult(rawValue: Int(mosqReturn)) ?? MosqResult.mosq_unknown, Int(messageId))
         }
     }
-
-    public func unsubscribe(topic: String, requestCompletion: ((MosqResult, Int) -> ())? = nil) {
+    
+    public func unsubscribe(_ topic: String, requestCompletion: ((MosqResult, Int) -> ())? = nil) {
         addRequestToQueue { mosqContext in
             var messageId: Int32 = 0
             let mosqReturn = mosquitto_unsubscribe(mosqContext.mosquittoHandler, &messageId, topic.cCharArray)
-            requestCompletion?(MosqResult(rawValue: Int(mosqReturn)) ?? MosqResult.MOSQ_UNKNOWN, Int(messageId))
+            requestCompletion?(MosqResult(rawValue: Int(mosqReturn)) ?? MosqResult.mosq_unknown, Int(messageId))
         }
     }
-
-    public func connectToHost(host: String, port: Int32, keepAlive: Int32, requestCompletion: ((MosqResult) -> ())? = nil) {
+    
+    public func connectTo(host: String, port: Int32, keepAlive: Int32, requestCompletion: ((MosqResult) -> ())? = nil) {
         self.isRunning = true
         addRequestToQueue { mosqContext in
             // mosquitto_connect should be call before mosquitto_loop_start.
             let mosqReturn = mosquitto_connect(mosqContext.mosquittoHandler, host, port, keepAlive)
             mosquitto_loop_start(mosqContext.mosquittoHandler)
-            requestCompletion?(MosqResult(rawValue: Int(mosqReturn)) ?? MosqResult.MOSQ_UNKNOWN)
+            requestCompletion?(MosqResult(rawValue: Int(mosqReturn)) ?? MosqResult.mosq_unknown)
         }
     }
-
-    public func reconnect(requestCompletion: ((MosqResult) -> ())? = nil) {
+    
+    public func reconnect(_ requestCompletion: ((MosqResult) -> ())? = nil) {
         self.isRunning = true
         addRequestToQueue { mosqContext in
             // mosquitto_reconnect should be call before mosquitto_loop_start.
             let mosqReturn = mosquitto_reconnect(mosqContext.mosquittoHandler)
             mosquitto_loop_start(mosqContext.mosquittoHandler)
-            requestCompletion?(MosqResult(rawValue: Int(mosqReturn)) ?? MosqResult.MOSQ_UNKNOWN)
+            requestCompletion?(MosqResult(rawValue: Int(mosqReturn)) ?? MosqResult.mosq_unknown)
         }
     }
-
-    public func disconnect(requestCompletion: ((MosqResult) -> ())? = nil) {
+    
+    public func disconnect(_ requestCompletion: ((MosqResult) -> ())? = nil) {
         guard isRunning == true else { return }
         
         self.isRunning = false
         addRequestToQueue { mosqContext in
             let mosqReturn = mosquitto_disconnect(mosqContext.mosquittoHandler)
             mosquitto_loop_stop(mosqContext.mosquittoHandler, false)
-            requestCompletion?(MosqResult(rawValue: Int(mosqReturn)) ?? MosqResult.MOSQ_UNKNOWN)
+            requestCompletion?(MosqResult(rawValue: Int(mosqReturn)) ?? MosqResult.mosq_unknown)
         }
     }
-
+    
     public func awaitRequestCompletion() {
         serialQueue.waitUntilAllOperationsAreFinished()
     }
-
+    
     public var socket: Int32? {
         let sock = mosquitto_socket(mosquittoContext.mosquittoHandler)
         return (sock == -1 ? nil : sock)
@@ -532,6 +533,6 @@ public final class MQTTClient {
 
 private extension String {
     var cCharArray: [CChar] {
-        return self.cStringUsingEncoding(NSUTF8StringEncoding)!
+        return self.cString(using: .utf8)!
     }
 }

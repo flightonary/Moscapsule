@@ -262,8 +262,8 @@ class MoscapsuleTests: XCTestCase {
             NSLog("Return Code is \(returnCode.description) (this callback is declared in swift.)")
         }
 
-        let bundleURL = NSURL(fileURLWithPath: NSBundle(forClass: self.dynamicType).pathForResource("cert", ofType: "bundle")!)
-        let certFile = bundleURL.URLByAppendingPathComponent("mosquitto.org.crt")!.path!
+        let bundleURL = URL(fileURLWithPath: Bundle(for: type(of: self)).path(forResource: "cert", ofType: "bundle")!)
+        let certFile = bundleURL.appendingPathComponent("mosquitto.org.crt").path
 
         mqttConfig.mqttServerCert = MQTTServerCert(cafile: certFile, capath: nil)
         //mqttConfig.mqttTlsOpts = MQTTTlsOpts(tls_insecure: true, cert_reqs: .SSL_VERIFY_NONE, tls_version: nil, ciphers: nil)
