@@ -493,7 +493,7 @@ public final class MQTTClient {
     public func connectTo(host: String, port: Int32, keepAlive: Int32, requestCompletion: ((MosqResult) -> ())? = nil) {
         self.isRunning = true
         addRequestToQueue { mosqContext in
-            // mosquitto_connect should be call before mosquitto_loop_start.
+            // mosquitto_connect should be called before mosquitto_loop_start.
             let mosqReturn = mosquitto_connect(mosqContext.mosquittoHandler, host, port, keepAlive)
             mosquitto_loop_start(mosqContext.mosquittoHandler)
             requestCompletion?(MosqResult(rawValue: Int(mosqReturn)) ?? MosqResult.mosq_unknown)
@@ -503,7 +503,7 @@ public final class MQTTClient {
     public func reconnect(_ requestCompletion: ((MosqResult) -> ())? = nil) {
         self.isRunning = true
         addRequestToQueue { mosqContext in
-            // mosquitto_reconnect should be call before mosquitto_loop_start.
+            // mosquitto_reconnect should be called before mosquitto_loop_start.
             let mosqReturn = mosquitto_reconnect(mosqContext.mosquittoHandler)
             mosquitto_loop_start(mosqContext.mosquittoHandler)
             requestCompletion?(MosqResult(rawValue: Int(mosqReturn)) ?? MosqResult.mosq_unknown)

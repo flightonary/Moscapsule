@@ -29,6 +29,11 @@ and then run;
 $ pod install
 ```
 
+Also you can specify swift version in the podfile, such as the following;
+```
+pod 'Moscapsule', :git => 'https://github.com/flightonary/Moscapsule.git', :branch => 'swift2'
+```
+
 In order to import the framework in tests, you should select configuration files.  
 a) Select your project and `info`.  
 b) Change configuration files from none to Pods.debug/release.  
@@ -54,7 +59,7 @@ g) Add Moscapsule in `Target Dependencies` and `Link Binary With Libraries` usin
 ![Moscapsule Manual Installation](https://flightonary.github.io/img/mosq_install.png)
 
 
-Usage
+Quick Start
 -----
 Here is a basic sample.
 ```swift
@@ -99,9 +104,16 @@ mqttConfig.mqttServerCert = MQTTServerCert(cafile: certFile, capath: nil)
 let mqttClient = MQTT.newConnection(mqttConfig)
 ```
 
+Reference
+-------
+#### Connection
+
+
+
 License
 -------
-The MIT License (MIT)
+Moscapsule: The MIT License (MIT)  
+Mosquitto: EPL/EDL license
 
 Author
 ------
