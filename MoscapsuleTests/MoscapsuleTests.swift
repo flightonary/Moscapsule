@@ -88,7 +88,9 @@ class MoscapsuleTests: XCTestCase {
         sleep(5)
         XCTAssertFalse(mqttClient.isConnected)
         // reconnecting again
-        mqttClient.reconnect()
+        mqttClient.reconnect { mosqResult in
+            print(mosqResult)
+        }
         sleep(5)
         XCTAssertTrue(mqttClient.isConnected)
     }
@@ -100,11 +102,17 @@ class MoscapsuleTests: XCTestCase {
         
         // first connecting
         mqttClient.connectTo(host: "test.mosquitto.org", port: 1883, keepAlive: 60)
-        sleep(5)
+        sleep(3)
         XCTAssertTrue(mqttClient.isConnected)
         // reconnecting again
-        mqttClient.reconnect()
-        sleep(5)
+        mqttClient.reconnect { mosqResult in
+            print(mosqResult)
+        }
+        sleep(3)
+        mqttClient.connectTo(host: "test.mosquitto.org", port: 1883, keepAlive: 60) { mosqResult in
+            print(mosqResult)
+        }
+        sleep(3)
         XCTAssertTrue(mqttClient.isConnected)
     }
     
@@ -168,6 +176,12 @@ class MoscapsuleTests: XCTestCase {
         published = false
         
         mqttClientPub.publish(string: payload, topic: topic, qos: 2, retain: false)
+        sleep(2)
+        XCTAssertTrue(published)
+        published = false
+        
+        let data = Data(bytes: [0x00, 0x01, 0x00, 0x00])
+        mqttClientPub.publish(data, topic: topic, qos: 2, retain: false)
         sleep(2)
         XCTAssertTrue(published)
         published = false

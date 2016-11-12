@@ -55,7 +55,7 @@ public enum ReasonCode: Int {
     case keepAlive_timeout = 1
     
     // Mosquitto confuses ReasonCode with MosqResult.
-    // It possibly returns MosqResult in _mosquitto_loop_rc_handle.
+    // These are possibly returned as ReasonCode in _mosquitto_loop_rc_handle.
     case mosq_protocol = 2
     case mosq_inval = 3
     case mosq_no_conn = 4

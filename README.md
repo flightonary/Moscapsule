@@ -17,7 +17,7 @@ Installation
 ### CocoaPods
 [CocoaPods](http://cocoapods.org) is a Cocoa project manager. It is a easy way for to install framework, so I recommend to using it.  
 Specify it in your podfile;
-```
+```ruby
 use_frameworks!
 
 pod 'Moscapsule', :git => 'https://github.com/flightonary/Moscapsule.git'
@@ -29,8 +29,8 @@ and then run;
 $ pod install
 ```
 
-Also you can specify swift version in the podfile, such as the following;
-```
+Also you can specify old swift version in the podfile, such as the following;
+```ruby
 pod 'Moscapsule', :git => 'https://github.com/flightonary/Moscapsule.git', :branch => 'swift2'
 ```
 
@@ -48,7 +48,7 @@ $ git clone https://github.com/flightonary/Moscapsule.git
 ```
 b) The framework depends on [OpenSSL](https://github.com/krzyzanowskim/OpenSSL "OpenSSL"). Before building it, you must checkout the submodule.
 ```
-$ git submodule update --init  
+$ git submodule update --init
 ```
 c) Create a Xcode project and Workspace if you don't have these.  
 d) Open workspace and drag & drop your project and Moscapsule.xcodeproj into Navigation.  
@@ -67,8 +67,8 @@ import Moscapsule
 
 // set MQTT Client Configuration
 let mqttConfig = MQTTConfig(clientId: "cid", host: "test.mosquitto.org", port: 1883, keepAlive: 60)
-mqttConfig.onPublishCallback = { messageId in
-    NSLog("published (mid=\(messageId))")
+mqttConfig.onConnectCallback = { returnCode in
+    NSLog("Return Code is \(returnCode.description)")
 }
 mqttConfig.onMessageCallback = { mqttMessage in
     NSLog("MQTT Message received: payload=\(mqttMessage.payloadString)")
@@ -106,8 +106,113 @@ let mqttClient = MQTT.newConnection(mqttConfig)
 
 Reference
 -------
-#### Connection
+#### Controlling Connections
+Create new connection;
+```swift
+// create MQTT Client Configuration with mandatory prameters
+let mqttConfig = MQTTConfig(clientId: "cid", host: "test.mosquitto.org", port: 1883, keepAlive: 60)
+// create new MQTT Connection
+let mqttClient = MQTT.newConnection(mqttConfig)
+```
+As soon as MQTTClient instance is created client attempt to connect to the host. It can be delayed by setting connectImmediately to false.
+```swift
+let mqttClient = MQTT.newConnection(mqttConfig, connectImmediately = false)
+mqttClient.connectTo(host: "test.mosquitto.org", port: 1883, keepAlive: 60)
+```
 
+Diconnect the connection;  
+```swift
+mqttClient.disconnect()
+```
+
+Reconnect to the same host;  
+```swift
+mqttClient.reconnect()
+```
+
+#### Messaging
+
+Publish a string to MQTT broker;  
+```swift
+let msg = "message"
+mqttClient.publish(string: msg, topic: topic, qos: 2, retain: false)
+```
+
+Publish a data to MQTT broker;  
+```swift
+let data = Data(bytes: [0x00, 0x01, 0x00, 0x00])
+mqttClient.publish(data, topic: topic, qos: 2, retain: false)
+```
+
+Subscribe a topic on MQTT broker;  
+```swift
+mqttClient.subscribe("/path/to/topic", qos: 2)
+```
+Messages on subscribed topic can be received in callback as mentioned below.
+
+Unsubscribe a topic;  
+```swift
+mqttClient.unsubscribe("/path/to/topic")
+```
+
+#### Callbacks
+Callback for result of attempting to connect;
+```swift
+mqttConfig.onConnectCallback = { returnCode in
+  if returnCode == ReturnCode.success {
+    // something to do in case of successful connection
+  }
+  else {
+    // error handling for connection failure
+  }
+}
+```
+
+Callback which is called when a client disconnected;
+```swift
+mqttConfig.onDisconnectCallback = { reasonCode in
+  if returnCode == ReasonCode.disconnect_requested {
+    // successful disconnection you requested
+  } else if ... {
+    // other cases such as unexpected disconnection.
+  }
+}
+```
+
+Callback which is called when a client published successfuly;
+```swift
+mqttConfig.onPublishCallback = { messageId in
+  // successful publish
+}
+```
+
+Callback which is called when a client received message successfuly;
+```swift
+mqttConfig.onMessageCallback = { mqttMessage in
+  if mqttMessage.topic == "/path/to/subscribed/topic" {
+    NSLog("MQTT Message received: payload=\(mqttMessage.payloadString)")
+  } else if ... {
+    // something to do in case of other topics
+  }
+}
+```
+
+Callback which is called when a client subscrived topic successfuly;
+```swift
+mqttConfig.onSubscribeCallback = { (messageId, grantedQos) in
+  NSLog("subscribed (mid=\(messageId),grantedQos=\(grantedQos))")
+}
+```
+
+Callback which is called when a client unsubscrived topic successfuly;
+```swift
+mqttConfig.onSubscribeCallback = { messageId in
+  NSLog("unsubscribed (mid=\(messageId)")
+}
+```
+
+#### Connection Options
+T.B.D.
 
 
 License
