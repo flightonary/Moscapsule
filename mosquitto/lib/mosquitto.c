@@ -197,6 +197,7 @@ int mosquitto_reinitialise(struct mosquitto *mosq, const char *id, bool clean_se
 	mosq->reconnect_delay = 1;
 	mosq->reconnect_delay_max = 1;
 	mosq->reconnect_exponential_backoff = false;
+	mosq->reconnect_enabled = true;
 	mosq->threaded = false;
 #ifdef WITH_TLS
 	mosq->ssl = NULL;
@@ -260,9 +261,20 @@ int mosquitto_username_pw_set(struct mosquitto *mosq, const char *username, cons
 	return MOSQ_ERR_SUCCESS;
 }
 
+int mosquitto_reconnect_disable(struct mosquitto *mosq)
+{
+	if(!mosq) return MOSQ_ERR_INVAL;
+	
+	mosq->reconnect_enabled = false;
+	
+	return MOSQ_ERR_SUCCESS;
+}
+
 int mosquitto_reconnect_delay_set(struct mosquitto *mosq, unsigned int reconnect_delay, unsigned int reconnect_delay_max, bool reconnect_exponential_backoff)
 {
 	if(!mosq) return MOSQ_ERR_INVAL;
+	
+	mosq->reconnect_enabled = true;
 	
 	mosq->reconnect_delay = reconnect_delay;
 	mosq->reconnect_delay_max = reconnect_delay_max;
@@ -1030,7 +1042,7 @@ int mosquitto_loop_forever(struct mosquitto *mosq, int timeout, int max_packets)
 		do{
 			rc = MOSQ_ERR_SUCCESS;
 			pthread_mutex_lock(&mosq->state_mutex);
-			if(mosq->state == mosq_cs_disconnecting){
+			if(mosq->state == mosq_cs_disconnecting || !mosq->reconnect_enabled){
 				run = 0;
 				pthread_mutex_unlock(&mosq->state_mutex);
 			}else{
