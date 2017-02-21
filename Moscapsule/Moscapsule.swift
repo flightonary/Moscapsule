@@ -246,11 +246,11 @@ public struct MQTTPsk {
 public struct MQTTMessage {
     public let messageId: Int
     public let topic: String
-    public let payload: Data
+    public let payload: Data?
     public let qos: Int32
     public let retain: Bool
     
-    public init(messageId: Int, topic: String, payload: Data, qos: Int32, retain: Bool) {
+    public init(messageId: Int, topic: String, payload: Data?, qos: Int32, retain: Bool) {
         self.messageId = messageId
         self.topic = topic
         self.payload = payload
@@ -270,7 +270,8 @@ public struct MQTTMessage {
         ]
         
         for encoding in encodingsToTry {
-            if let string = String(data: payload, encoding: encoding) {
+            if let payload = payload,
+                let string = String(data: payload, encoding: encoding) {
                 return string
             }
         }
@@ -408,7 +409,8 @@ public final class MQTT {
             let message = rawMessage.pointee
             // If there are issues with topic string, drop message on the floor
             let topic = String(cString: message.topic)
-            let payload = Data(bytes: message.payload, count: Int(message.payloadlen))
+            let payload = message.payload != nil ?
+                Data(bytes: message.payload, count: Int(message.payloadlen)) : nil
             let mqttMessage = MQTTMessage(messageId: Int(message.mid), topic: topic, payload: payload, qos: message.qos, retain: message.retain)
             callback(mqttMessage)
         }
