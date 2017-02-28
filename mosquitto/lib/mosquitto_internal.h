@@ -245,6 +245,7 @@ struct mosquitto {
 	unsigned int reconnect_delay;
 	unsigned int reconnect_delay_max;
 	bool reconnect_exponential_backoff;
+	bool reconnect_enabled;
 	bool threaded;
 	struct _mosquitto_packet *out_packet_last;
 	int inflight_messages;
