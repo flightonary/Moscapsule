@@ -403,7 +403,7 @@ public final class MQTT {
             let message = rawMessage.pointee
             // If there are issues with topic string, drop message on the floor
             let topic = String(cString: message.topic)
-            let payload = message.payload != nil ?
+            let payload: Data? = message.payload != nil ?
                 Data(bytes: message.payload, count: Int(message.payloadlen)) : nil
             let mqttMessage = MQTTMessage(messageId: Int(message.mid), topic: topic, payload: payload, qos: message.qos, retain: message.retain)
             callback(mqttMessage)

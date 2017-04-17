@@ -16,12 +16,24 @@ Installation
 
 ### CocoaPods
 [CocoaPods](http://cocoapods.org) is a Cocoa project manager. It is a easy way for to install framework, so I recommend to using it.  
-Specify it in your podfile;
+Create your project on Xcode and specify it in your podfile;
 ```ruby
-use_frameworks!
+target 'MyApp' do
+  use_frameworks!
 
-pod 'Moscapsule', :git => 'https://github.com/flightonary/Moscapsule.git'
-pod 'OpenSSL-Universal', '~> 1.0.1.18'
+  project 'MyApp.xcodeproj'
+
+  pod 'Moscapsule', :git => 'https://github.com/flightonary/Moscapsule.git'
+  pod 'OpenSSL-Universal'
+
+  target 'MyAppTests' do
+    inherit! :search_paths
+  end
+
+  target 'MyAppUITests' do
+    inherit! :search_paths
+  end
+end
 ```
 
 and then run;
