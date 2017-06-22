@@ -486,7 +486,7 @@ int _mosquitto_socket_connect(struct mosquitto *mosq, const char *host, uint16_t
 
 			if(mosq->tls_pw_callback){
 				SSL_CTX_set_default_passwd_cb(mosq->ssl_ctx, mosq->tls_pw_callback);
-				SSL_CTX_set_default_passwd_cb_userdata(mosq->ssl_ctx, mosq);
+				SSL_CTX_set_default_passwd_cb_userdata(mosq->ssl_ctx, mosq->userdata);
 			}
 
 			if(mosq->tls_certfile){
