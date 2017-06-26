@@ -135,7 +135,7 @@ class MoscapsuleTests: XCTestCase {
         }
         mqttConfigSub.onMessageCallback = { mqttMessage in
             received = true
-            NSLog("MQTT Message received: payload=\(mqttMessage.payloadString)")
+            NSLog("MQTT Message received: payload=\(String(describing: mqttMessage.payloadString))")
             XCTAssertEqual(mqttMessage.payloadString!, payload, "Received message must be the same as published one!!")
         }
         
