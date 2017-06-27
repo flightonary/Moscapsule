@@ -340,9 +340,9 @@ public final class MQTT {
 		
         // set MQTT Will Options
         if let mqttWillOpts = mqttConfig.mqttWillOpts {
-            mqttWillOpts.payload.withUnsafeBytes {
+            mqttWillOpts.payload.withUnsafeBytes { p -> Void in
                 mosquitto_will_set(mosquittoContext.mosquittoHandler, mqttWillOpts.topic.cCharArray,
-                                   Int32(mqttWillOpts.payload.count), $0,
+                                   Int32(mqttWillOpts.payload.count), p,
                                    mqttWillOpts.qos, mqttWillOpts.retain)
             }
         }
