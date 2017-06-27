@@ -507,8 +507,8 @@ public final class MQTTClient {
     }
     
     public func disconnect(_ requestCompletion: ((MosqResult) -> ())? = nil) {
-		guard isRunning == true
-			else { requestCompletion?(.mosq_success); return }
+        guard isRunning == true
+            else { requestCompletion?(.mosq_success); return }
         
         self.isRunning = false
         addRequestToQueue { mosqContext in
