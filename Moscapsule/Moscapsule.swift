@@ -249,6 +249,10 @@ public struct MQTTMessage {
     }
     
     public var payloadString: String? {
+        guard let payload = payload else {
+            return nil
+        }
+        
         let encodingsToTry: [String.Encoding] = [
             .utf8, .ascii, .utf16, .utf16BigEndian,
             .utf16LittleEndian, .utf32, .utf32BigEndian,
@@ -260,13 +264,13 @@ public struct MQTTMessage {
         ]
         
         for encoding in encodingsToTry {
-            if let payload = payload,
-                let string = String(data: payload, encoding: encoding) {
+            if let string = String(data: payload, encoding: encoding) {
                 return string
             }
         }
         
-        return nil
+        let hexString = (payload as Data).map { String(format: "%02.2hhx", $0) }.joined()
+        return hexString
     }
 }
 
