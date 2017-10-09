@@ -314,15 +314,15 @@ public final class MQTTConfig {
 }
 
 public final class __MosquittoContext : NSObject {
-    public var mosquittoHandler: OpaquePointer? = nil
-    public var isConnected: Bool = false
-    public var onConnectCallback: ((_ returnCode: Int) -> ())!
-    public var onDisconnectCallback: ((_ reasonCode: Int) -> ())!
-    public var onPublishCallback: ((_ messageId: Int) -> ())!
-    public var onMessageCallback: ((_ message: UnsafePointer<mosquitto_message>) -> ())!
-    public var onSubscribeCallback: ((_ messageId: Int, _ qosCount: Int, _ grantedQos: UnsafePointer<Int32>) -> ())!
-    public var onUnsubscribeCallback: ((_ messageId: Int) -> ())!
-    public var keyfile_passwd: String = ""
+    @objc public var mosquittoHandler: OpaquePointer? = nil
+    @objc public var isConnected: Bool = false
+    @objc public var onConnectCallback: ((_ returnCode: Int) -> ())!
+    @objc public var onDisconnectCallback: ((_ reasonCode: Int) -> ())!
+    @objc public var onPublishCallback: ((_ messageId: Int) -> ())!
+    @objc public var onMessageCallback: ((_ message: UnsafePointer<mosquitto_message>) -> ())!
+    @objc public var onSubscribeCallback: ((_ messageId: Int, _ qosCount: Int, _ grantedQos: UnsafePointer<Int32>) -> ())!
+    @objc public var onUnsubscribeCallback: ((_ messageId: Int) -> ())!
+    @objc public var keyfile_passwd: String = ""
     internal override init(){}
 }
 
