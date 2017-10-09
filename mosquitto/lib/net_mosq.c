@@ -272,7 +272,7 @@ int _mosquitto_try_connect(struct mosquitto *mosq, const char *host, uint16_t po
 {
 	struct addrinfo hints;
 	struct addrinfo *ainfo, *rp;
-	struct addrinfo *ainfo_bind, *rp_bind;
+	struct addrinfo *ainfo_bind = NULL, *rp_bind;
 	int s;
 	int rc = MOSQ_ERR_SUCCESS;
 #ifdef WIN32
