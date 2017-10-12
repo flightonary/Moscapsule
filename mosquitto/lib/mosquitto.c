@@ -70,7 +70,7 @@ int mosquitto_lib_init(void)
 	struct timeval tv;
 
 	gettimeofday(&tv, NULL);
-	srand(tv.tv_sec*1000 + tv.tv_usec/1000);
+	srand((unsigned int)(tv.tv_sec*1000 + tv.tv_usec/1000));
 #endif
 
 	_mosquitto_net_init();
@@ -1063,7 +1063,7 @@ int mosquitto_loop_forever(struct mosquitto *mosq, int timeout, int max_packets)
 #ifdef WIN32
 				Sleep(reconnect_delay*1000);
 #else
-				sleep(reconnect_delay);
+				sleep((unsigned int)reconnect_delay);
 #endif
 
 				pthread_mutex_lock(&mosq->state_mutex);

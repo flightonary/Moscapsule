@@ -73,7 +73,7 @@ int _mosquitto_server_certificate_verify(int preverify_ok, X509_STORE_CTX *ctx)
 int mosquitto__cmp_hostname_wildcard(char *certname, const char *hostname)
 {
 	int i;
-	int len;
+	unsigned long len;
 
 	if(!certname || !hostname){
 		return 1;

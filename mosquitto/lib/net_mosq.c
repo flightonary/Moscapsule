@@ -658,7 +658,7 @@ ssize_t _mosquitto_net_read(struct mosquitto *mosq, void *buf, size_t count)
 	errno = 0;
 #ifdef WITH_TLS
 	if(mosq->ssl){
-		ret = SSL_read(mosq->ssl, buf, count);
+		ret = SSL_read(mosq->ssl, buf, (int)count);
 		if(ret <= 0){
 			err = SSL_get_error(mosq->ssl, ret);
 			if(err == SSL_ERROR_WANT_READ){
