@@ -254,7 +254,7 @@ int _mosquitto_send_real_publish(struct mosquitto *mosq, uint16_t mid, const cha
 	assert(mosq);
 	assert(topic);
 
-	packetlen = 2+strlen(topic) + payloadlen;
+	packetlen = (int)(2+strlen(topic)) + payloadlen;
 	if(qos > 0) packetlen += 2; /* For message id */
 	packet = _mosquitto_calloc(1, sizeof(struct _mosquitto_packet));
 	if(!packet) return MOSQ_ERR_NOMEM;

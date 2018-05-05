@@ -44,9 +44,10 @@ static void on_log(struct mosquitto *, void *, int, const char *);
 static const char *LogLevelString(int);
 static void log_d(__MosquittoContext *, enum mosq_err_t, NSString *);
 
-void mosquitto_context_setup(const char *clientId, bool cleanSession, __MosquittoContext *mosquittoContext)
+void mosquitto_context_setup(const char *clientId, bool cleanSession, __MosquittoContext *mosquittoContext, int protocolVersion)
 {
     mosquittoContext.mosquittoHandler = mosquitto_new(clientId, cleanSession, (__bridge void*)mosquittoContext);
+    mosquitto_opts_set(mosquittoContext.mosquittoHandler, MOSQ_OPT_PROTOCOL_VERSION, &protocolVersion);
     mosquittoContext.isConnected = false;
     setMosquittoCallbackBridge(mosquittoContext.mosquittoHandler);
 }

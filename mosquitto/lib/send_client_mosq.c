@@ -72,7 +72,7 @@ int _mosquitto_send_connect(struct mosquitto *mosq, uint16_t keepalive, bool cle
 	packet = _mosquitto_calloc(1, sizeof(struct _mosquitto_packet));
 	if(!packet) return MOSQ_ERR_NOMEM;
 
-	payloadlen = 2+strlen(clientid);
+	payloadlen = (int)(2+strlen(clientid));
 	if(mosq->will){
 		will = 1;
 		assert(mosq->will->topic);

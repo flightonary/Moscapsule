@@ -77,9 +77,6 @@ Here is a basic sample.
 ```swift
 import Moscapsule
 
-// Note that initializer must be called only once after launch application
-moscapsule_init()
-
 // set MQTT Client Configuration
 let mqttConfig = MQTTConfig(clientId: "cid", host: "test.mosquitto.org", port: 1883, keepAlive: 60)
 mqttConfig.onConnectCallback = { returnCode in
@@ -105,7 +102,8 @@ Here is a sample for server certificate.
 ```swift
 import Moscapsule
 
-// Note that initializer must be called only once after launch application
+// Note that you must initialize framework only once after launch application
+// in case that it uses SSL/TLS functions.
 moscapsule_init()
 
 let mqttConfig = MQTTConfig(clientId: "server_cert_test", host: "test.mosquitto.org", port: 8883, keepAlive: 60)

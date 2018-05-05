@@ -225,8 +225,8 @@ int mosquitto_topic_matches_sub(const char *sub, const char *topic, bool *result
 
 	if(!sub || !topic || !result) return MOSQ_ERR_INVAL;
 
-	slen = strlen(sub);
-	tlen = strlen(topic);
+	slen = (int)strlen(sub);
+	tlen = (int)strlen(topic);
 
 	if(slen && tlen){
 		if((sub[0] == '$' && topic[0] != '$')
