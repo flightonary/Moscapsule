@@ -26,7 +26,8 @@ Pod::Spec.new do |s|
   s.xcconfig     = {
     'SWIFT_VERSION' => '4.0',
     'OTHER_CFLAGS' => '-DWITH_THREADING -DWITH_TLS -DWITH_TLS_PSK',
-    'LIBRARY_SEARCH_PATHS' => '"$(PODS_ROOT)/OpenSSL-Universal/lib-ios"' # workaround in case that pods don't use "s.dependecy"
+    'LIBRARY_SEARCH_PATHS' => '"$(PODS_ROOT)/OpenSSL-Universal/lib-ios"', # workaround
+    'HEADER_SEARCH_PATHS' => '"${PODS_ROOT}/Headers/Public/OpenSSL-Universal"'
   }
 
   #s.dependency      "OpenSSL-Universal", "~> 1.0.1.20"
