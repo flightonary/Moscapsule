@@ -89,7 +89,8 @@ Pod::Spec.new do |s|
   s.requires_arc = true
   s.xcconfig     = {
     'OTHER_CFLAGS' => '-DWITH_THREADING -DWITH_TLS -DWITH_TLS_PSK',
-    'LIBRARY_SEARCH_PATHS' => '"$(PODS_ROOT)/OpenSSL-Universal/lib-ios"' # workaround
+    'LIBRARY_SEARCH_PATHS' => '"$(PODS_ROOT)/OpenSSL-Universal/lib-ios"', # workaround
+    'HEADER_SEARCH_PATHS' => '"${PODS_ROOT}/Headers/Public/OpenSSL-Universal"'
   }
 
   # FIXME: Don't work with dependency.
