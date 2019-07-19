@@ -1,7 +1,7 @@
 Pod::Spec.new do |s|
 
   s.name         = "Moscapsule"
-  s.version      = "0.6.2"
+  s.version      = "0.6.3"
   s.summary      = "MQTT Client for iOS written in Swift"
   s.description  = <<-DESC
                    MQTT Client for iOS written in Swift.
