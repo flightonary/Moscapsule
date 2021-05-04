@@ -184,7 +184,7 @@ mqttConfig.onConnectCallback = { returnCode in
 Callback which is called when a client disconnected;
 ```swift
 mqttConfig.onDisconnectCallback = { reasonCode in
-  if returnCode == ReasonCode.disconnect_requested {
+  if reasonCode == ReasonCode.disconnect_requested {
     // successful disconnection you requested
   } else if ... {
     // other cases such as unexpected disconnection.
