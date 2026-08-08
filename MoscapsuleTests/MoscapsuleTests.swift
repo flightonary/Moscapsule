@@ -1,6 +1,5 @@
-import UIKit
 import XCTest
-
+import Network
 import Moscapsule
 
 
@@ -12,17 +11,40 @@ class MoscapsuleTests: XCTestCase {
     
     var initFlag = false
     
-    override func setUp() {
-        super.setUp()
-        // Put setup code here. This method is called before the invocation of each test method in the class.
+    private static var _brokerReachable: Bool?
+    private static func isBrokerReachable() -> Bool {
+        if let cached = _brokerReachable { return cached }
+        let semaphore = DispatchSemaphore(value: 0)
+        var reachable = false
+        let conn = NWConnection(host: "test.mosquitto.org", port: 1883, using: .tcp)
+        conn.stateUpdateHandler = { state in
+            switch state {
+            case .ready:
+                reachable = true
+                semaphore.signal()
+            case .failed, .cancelled:
+                semaphore.signal()
+            default:
+                break
+            }
+        }
+        conn.start(queue: .global())
+        _ = semaphore.wait(timeout: .now() + 3)
+        conn.cancel()
+        _brokerReachable = reachable
+        return reachable
+    }
+
+    override func setUpWithError() throws {
+        try super.setUpWithError()
+        try XCTSkipUnless(MoscapsuleTests.isBrokerReachable(), "test.mosquitto.org:1883 unreachable — skipping")
         if !initFlag {
             initFlag = true
             moscapsule_init()
         }
     }
-    
+
     override func tearDown() {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
         super.tearDown()
     }
 
@@ -248,7 +270,11 @@ class MoscapsuleTests: XCTestCase {
             NSLog("Return Code is \(returnCode.description) (this callback is declared in swift.)")
         }
 
+#if SWIFT_PACKAGE
+        let bundleURL = URL(fileURLWithPath: Bundle.module.path(forResource: "cert", ofType: "bundle")!)
+#else
         let bundleURL = URL(fileURLWithPath: Bundle(for: type(of: self)).path(forResource: "cert", ofType: "bundle")!)
+#endif
         let certFile = bundleURL.appendingPathComponent("mosquitto.org.crt").path
 
         mqttConfig.mqttServerCert = MQTTServerCert(cafile: certFile, capath: nil)

@@ -112,7 +112,6 @@ void _mosquitto_net_cleanup(void)
 {
 #ifdef WITH_TLS
 	ERR_remove_state(0);
-	ENGINE_cleanup();
 	CONF_modules_unload(1);
 	ERR_free_strings();
 	EVP_cleanup();

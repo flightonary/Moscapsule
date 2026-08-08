@@ -22,10 +22,9 @@ target 'MyApp' do
   use_frameworks!
 
   project 'MyApp.xcodeproj'
-  platform :ios, '9.0'
+  platform :ios, '13.0'
 
   pod 'Moscapsule', :git => 'https://github.com/flightonary/Moscapsule.git'
-  pod 'OpenSSL-Universal'
 
   target 'MyAppTests' do
     inherit! :search_paths
@@ -42,6 +41,8 @@ and then run;
 $ pod install
 ```
 
+`OpenSSL-Universal` (~> 3.3, i.e. OpenSSL 3.x) is pulled in automatically as a transitive dependency.
+
 Also you can specify old swift version in the podfile, such as the following;
 ```ruby
 pod 'Moscapsule', :git => 'https://github.com/flightonary/Moscapsule.git', :branch => 'swift2'
@@ -51,6 +52,13 @@ In order to import the framework in tests, you should select configuration files
 a) Select your project and `info`.  
 b) Change configuration files from none to Pods.debug/release.  
 ![Configuration File](https://flightonary.github.io/img/inst_with_cocoapods.png)
+
+### Swift Package Manager
+Add Moscapsule as a package dependency in Xcode (**File → Add Package Dependencies…**) or in `Package.swift`:
+```swift
+.package(url: "https://github.com/flightonary/Moscapsule.git", from: "0.7.1")
+```
+Then add `"Moscapsule"` to your target's dependencies. `OpenSSL-Package` (≥ 3.3.2000) is resolved automatically as a transitive dependency.
 
 ### Manual Installation
 If you don't want to use CocoaPods, you can install manually.

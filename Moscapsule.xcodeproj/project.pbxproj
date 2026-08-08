@@ -45,6 +45,8 @@
 		09CF6B6E1A21F82600A97383 /* config.h in Headers */ = {isa = PBXBuildFile; fileRef = 09CF6B6D1A21F82600A97383 /* config.h */; };
 		09CF6B701A21F88000A97383 /* Moscapsule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09CF6B6F1A21F88000A97383 /* Moscapsule.swift */; };
 		09FB79171BB6FA4100B22BAA /* cert.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 09FB79161BB6FA4100B22BAA /* cert.bundle */; };
+		ADD12C412F801700003A241F /* __MosquittoContext.m in Sources */ = {isa = PBXBuildFile; fileRef = ADD12C402F801700003A241F /* __MosquittoContext.m */; };
+		ADD12C452F801734003A241F /* __MosquittoContext.h in Headers */ = {isa = PBXBuildFile; fileRef = ADD12C442F801734003A241F /* __MosquittoContext.h */; };
 		C7360CC31A2435A8001F490F /* MosquittoCallbackBridge.m in Sources */ = {isa = PBXBuildFile; fileRef = C7360CC21A2435A8001F490F /* MosquittoCallbackBridge.m */; };
 		C7360CC51A243AB9001F490F /* MosquittoCallbackBridge.h in Headers */ = {isa = PBXBuildFile; fileRef = C7360CC41A243949001F490F /* MosquittoCallbackBridge.h */; settings = {ATTRIBUTES = (Public, ); }; };
 /* End PBXBuildFile section */
@@ -101,8 +103,10 @@
 		09CF6B6D1A21F82600A97383 /* config.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = config.h; path = Moscapsule/config.h; sourceTree = "<group>"; };
 		09CF6B6F1A21F88000A97383 /* Moscapsule.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Moscapsule.swift; sourceTree = "<group>"; };
 		09FB79161BB6FA4100B22BAA /* cert.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; path = cert.bundle; sourceTree = "<group>"; };
+		ADD12C402F801700003A241F /* __MosquittoContext.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = __MosquittoContext.m; sourceTree = "<group>"; };
+		ADD12C442F801734003A241F /* __MosquittoContext.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = __MosquittoContext.h; path = include/__MosquittoContext.h; sourceTree = "<group>"; };
 		C7360CC21A2435A8001F490F /* MosquittoCallbackBridge.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MosquittoCallbackBridge.m; sourceTree = "<group>"; };
-		C7360CC41A243949001F490F /* MosquittoCallbackBridge.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MosquittoCallbackBridge.h; sourceTree = "<group>"; };
+		C7360CC41A243949001F490F /* MosquittoCallbackBridge.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = MosquittoCallbackBridge.h; path = include/MosquittoCallbackBridge.h; sourceTree = "<group>"; };
 		C7D24C911A3E94AC00C33384 /* download_mosquitto.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = download_mosquitto.sh; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
@@ -130,6 +134,7 @@
 			children = (
 				09CF6B2F1A21F7C600A97383 /* mosquitto */,
 				09CF6B151A21F78700A97383 /* Moscapsule */,
+				ADD12C3F2F801687003A241F /* MoscapsuleBridge */,
 				09CF6B221A21F78700A97383 /* MoscapsuleTests */,
 				09CF6B141A21F78700A97383 /* Products */,
 			);
@@ -150,8 +155,6 @@
 				09CF6B6F1A21F88000A97383 /* Moscapsule.swift */,
 				09CF6B181A21F78700A97383 /* Moscapsule.h */,
 				09CF6B161A21F78700A97383 /* Supporting Files */,
-				C7360CC21A2435A8001F490F /* MosquittoCallbackBridge.m */,
-				C7360CC41A243949001F490F /* MosquittoCallbackBridge.h */,
 			);
 			path = Moscapsule;
 			sourceTree = "<group>";
@@ -231,6 +234,17 @@
 			name = lib;
 			sourceTree = "<group>";
 		};
+		ADD12C3F2F801687003A241F /* MoscapsuleBridge */ = {
+			isa = PBXGroup;
+			children = (
+				ADD12C402F801700003A241F /* __MosquittoContext.m */,
+				ADD12C442F801734003A241F /* __MosquittoContext.h */,
+				C7360CC21A2435A8001F490F /* MosquittoCallbackBridge.m */,
+				C7360CC41A243949001F490F /* MosquittoCallbackBridge.h */,
+			);
+			path = MoscapsuleBridge;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXHeadersBuildPhase section */
@@ -238,6 +252,7 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				ADD12C452F801734003A241F /* __MosquittoContext.h in Headers */,
 				09CF6B191A21F78700A97383 /* Moscapsule.h in Headers */,
 				09CF6B581A21F7E600A97383 /* mosquitto.h in Headers */,
 				09CF6B591A21F7E600A97383 /* mqtt3_protocol.h in Headers */,
@@ -366,6 +381,7 @@
 				09CF6B5D1A21F7E600A97383 /* read_handle_shared.c in Sources */,
 				09CF6B651A21F7E600A97383 /* time_mosq.c in Sources */,
 				09CF6B611A21F7E600A97383 /* send_mosq.c in Sources */,
+				ADD12C412F801700003A241F /* __MosquittoContext.m in Sources */,
 				09CF6B6B1A21F7E600A97383 /* will_mosq.c in Sources */,
 				09CF6B701A21F88000A97383 /* Moscapsule.swift in Sources */,
 				094821041B0E2EB600099178 /* socks_mosq.c in Sources */,
@@ -452,7 +468,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
@@ -506,7 +522,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = iphoneos;
 				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
@@ -534,14 +550,12 @@
 				ENABLE_BITCODE = NO;
 				HEADER_SEARCH_PATHS = (
 					"$(inherited)",
-					/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include,
-					"./submodules/OpenSSL/include-ios",
+					"./submodules/OpenSSL/${PLATFORM_NAME}/include",
 				);
 				INFOPLIST_FILE = Moscapsule/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
-				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
-				LIBRARY_SEARCH_PATHS = "./submodules/OpenSSL/lib-ios";
+				LIBRARY_SEARCH_PATHS = "./submodules/OpenSSL/${PLATFORM_NAME}/lib";
 				OTHER_CFLAGS = (
 					"-DWITH_THREADING",
 					"-DWITH_TLS",
@@ -575,14 +589,12 @@
 				ENABLE_BITCODE = NO;
 				HEADER_SEARCH_PATHS = (
 					"$(inherited)",
-					/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include,
-					"./submodules/OpenSSL/include-ios",
+					"./submodules/OpenSSL/${PLATFORM_NAME}/include",
 				);
 				INFOPLIST_FILE = Moscapsule/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
-				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
-				LIBRARY_SEARCH_PATHS = "./submodules/OpenSSL/lib-ios";
+				LIBRARY_SEARCH_PATHS = "./submodules/OpenSSL/${PLATFORM_NAME}/lib";
 				OTHER_CFLAGS = (
 					"-DWITH_THREADING",
 					"-DWITH_TLS",

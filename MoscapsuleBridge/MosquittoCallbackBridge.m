@@ -1,7 +1,6 @@
 #import <Foundation/Foundation.h>
 #import "MosquittoCallbackBridge.h"
 #import "mosquitto.h"
-#import "Moscapsule/Moscapsule-Swift.h"
 
 // Local Functions
 static int pw_callback(char *, int, int, void *);

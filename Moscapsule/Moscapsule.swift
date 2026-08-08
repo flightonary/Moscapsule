@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(CMoscapsuleBridge)
+import CMoscapsuleBridge
+#endif
 
 public enum ReturnCode: Int {
     case success = 0
@@ -286,18 +289,6 @@ public final class MQTTConfig {
     }
 }
 
-public final class __MosquittoContext : NSObject {
-    @objc public var mosquittoHandler: OpaquePointer? = nil
-    @objc public var isConnected: Bool = false
-    @objc public var onConnectCallback: ((_ returnCode: Int) -> ())!
-    @objc public var onDisconnectCallback: ((_ reasonCode: Int) -> ())!
-    @objc public var onPublishCallback: ((_ messageId: Int) -> ())!
-    @objc public var onMessageCallback: ((_ message: UnsafePointer<mosquitto_message>) -> ())!
-    @objc public var onSubscribeCallback: ((_ messageId: Int, _ qosCount: Int, _ grantedQos: UnsafePointer<Int32>) -> ())!
-    @objc public var onUnsubscribeCallback: ((_ messageId: Int) -> ())!
-    @objc public var keyfile_passwd: String = ""
-    internal override init(){}
-}
 
 public final class MQTT {
     public class func newConnection(_ mqttConfig: MQTTConfig, connectImmediately: Bool = true) -> MQTTClient {
